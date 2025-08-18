@@ -1,0 +1,7 @@
+body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111;color:#fff}
+header a{color:#9bd; margin-right:8px; text-decoration:none}
+main{padding:16px}
+.chat form{display:flex;gap:8px;margin-bottom:8px}
+.chat pre{background:#111;color:#def;padding:12px;border-radius:6px;overflow:auto;min-height:120px}
+.graph pre{background:#fff;}
