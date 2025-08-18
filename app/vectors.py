@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from typing import Iterable, List, Tuple
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 from sqlalchemy.orm import Session
-from pgvector.sqlalchemy import cosine_distance
 
 from .db import Document
 
@@ -19,5 +18,6 @@ def similarity_search(db: Session, query_embedding: list[float], slug: str | Non
     stmt = select(Document)
     if slug:
         stmt = stmt.where(Document.slug == slug)
-    stmt = stmt.order_by(cosine_distance(Document.embedding, query_embedding)).limit(k)
+    # Use the <=> operator for cosine distance in pgvector
+    stmt = stmt.order_by(text("embedding <=> :query_embedding")).params(query_embedding=query_embedding).limit(k)
     return list(db.execute(stmt).scalars().all())
