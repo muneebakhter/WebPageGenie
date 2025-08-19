@@ -23,6 +23,11 @@ RAG-powered AI chatbot that generates and edits single-file HTML5/CSS3/JS webpag
    OPENAI_MODEL=gpt-5
    EMBED_MODEL=text-embedding-3-large
    EMBED_DIM=3072
+   # Optional reranking with Cohere
+   COHERE_API_KEY=
+   RERANK_MODEL=rerank-english-v3.0
+   # Optional pgvector HNSW search tuning
+   HNSW_EF_SEARCH=100
    DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/webpagegenie
    HOST=0.0.0.0
    PORT=8000
@@ -53,7 +58,7 @@ RAG-powered AI chatbot that generates and edits single-file HTML5/CSS3/JS webpag
 - View the graph at `/graph`.
 
 ### Data model
-- Table `documents(slug, chunk_id, content, embedding)` with pgvector column.
+- Table `documents(slug, chunk_id, content, embedding, dom_path)` with pgvector column.
 - Retrieval uses cosine distance to find top-K chunks. Generation uses `gpt-5` for instructions and page edits.
 
 ### Selenium smoke test
@@ -63,7 +68,8 @@ RAG-powered AI chatbot that generates and edits single-file HTML5/CSS3/JS webpag
   ```
 
 ### Notes
-- The ingestion pipeline strips `script`/`style` and splits visible text into overlapping chunks.
+- The ingestion pipeline strips `script`/`style` and performs DOM-aware chunking with `dom_path` metadata; falls back to flat chunking when needed.
+- A raw HTML snapshot is stored under a separate slug `slug__raw` for potential fallback usage.
 - If the model response contains `<html` and `page_slug` is provided, the HTML gets saved and re-ingested.
 
 ### Next steps / Improvements

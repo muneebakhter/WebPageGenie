@@ -14,6 +14,17 @@ from .vectors import similarity_search
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-large")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+RERANK_MODEL = os.getenv("RERANK_MODEL", "rerank-english-v3.0")
+
+_cohere_client = None
+if COHERE_API_KEY:
+    try:
+        import cohere  # type: ignore
+
+        _cohere_client = cohere.Client(api_key=COHERE_API_KEY)
+    except Exception:
+        _cohere_client = None
 
 
 class GraphState(BaseModel):
@@ -28,8 +39,15 @@ def _retrieve(state: GraphState) -> GraphState:
     query_vec = embeddings.embed_query(state.question)
     with SessionLocal() as db:
         docs = similarity_search(db, query_vec, slug=state.page_slug, k=5)
-    lcdocs = [LCDocument(page_content=d.content, metadata={"slug": d.slug, "chunk_id": d.chunk_id}) for d in docs]
-    state.retrieved = lcdocs
+    lcdocs = [
+        LCDocument(
+            page_content=d.content,
+            metadata={"slug": d.slug, "chunk_id": d.chunk_id, "dom_path": getattr(d, "dom_path", None)},
+        )
+        for d in docs
+    ]
+    # Optional reranking
+    state.retrieved = _rerank_docs(state.question, lcdocs)
     return state
 
 
@@ -48,6 +66,26 @@ def _generate(state: GraphState) -> GraphState:
     ])
     state.answer = msg.content
     return state
+
+
+def _rerank_docs(query: str, docs: List[LCDocument]) -> List[LCDocument]:
+    if not docs:
+        return docs
+    if _cohere_client is None:
+        return docs
+    try:
+        doc_texts = [d.page_content for d in docs]
+        result = _cohere_client.rerank(
+            model=RERANK_MODEL,
+            query=query,
+            documents=doc_texts,
+            top_n=len(doc_texts),
+        )
+        # Cohere returns items with index and relevance score
+        ordered = sorted(result, key=lambda r: r.relevance_score, reverse=True)
+        return [docs[r.index] for r in ordered]
+    except Exception:
+        return docs
 
 
 def build_graph():
