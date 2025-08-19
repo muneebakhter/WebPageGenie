@@ -125,6 +125,9 @@
   const frame = document.getElementById('preview-frame');
   const pickBtn = document.getElementById('pick-element');
   const retrievalSelect = document.getElementById('retrieval-method');
+  const vpMobile = document.getElementById('vp-mobile');
+  const vpTablet = document.getElementById('vp-tablet');
+  const vpDesktop = document.getElementById('vp-desktop');
   let pickActive = false;
   let selectedPath = [];
   let selectedNode = null;
@@ -187,6 +190,15 @@
       updateFrame();
     });
   }
+  // Viewport toggles
+  function setViewport(width){
+    if(!frame) return;
+    frame.style.maxWidth = width ? width + 'px' : '';
+    frame.style.margin = width ? '0 auto' : '';
+  }
+  if(vpMobile){ vpMobile.addEventListener('click', ()=> setViewport(390)); }
+  if(vpTablet){ vpTablet.addEventListener('click', ()=> setViewport(768)); }
+  if(vpDesktop){ vpDesktop.addEventListener('click', ()=> setViewport(null)); }
   // Element picker injection
   function injectPicker(){
     if(!frame || !frame.contentWindow) return;
