@@ -1,7 +1,49 @@
-body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111;color:#fff}
-header a{color:#9bd; margin-right:8px; text-decoration:none}
-main{padding:16px}
-.chat form{display:flex;gap:8px;margin-bottom:8px}
-.chat pre{background:#111;color:#def;padding:12px;border-radius:6px;overflow:auto;min-height:120px}
-.graph pre{background:#fff;}
+body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;background:#0b1220;color:#e6ecff}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(90deg,#0b1220,#0f1b3d);border-bottom:1px solid rgba(255,255,255,0.08)}
+header .brand{display:flex;align-items:center;gap:10px;margin-right:16px}
+header .logo{width:28px;height:28px;opacity:.9}
+header h1{font-size:18px;margin:0;color:#fff}
+header a{color:#9dc1ff;margin-right:10px;text-decoration:none;padding:6px 10px;border-radius:6px}
+header a:hover{background:rgba(157,193,255,0.12)}
+main{padding:0}
+
+.layout{display:flex;min-height:calc(100vh - 64px)}
+.sidebar{width:320px;flex:0 0 auto;border-right:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)}
+.sidebar.collapsed{width:0;flex:0 0 0;overflow:hidden}
+.sidebar-inner{padding:12px;display:flex;flex-direction:column;gap:12px}
+.header-tools{flex:1;gap:10px}
+.header-tools #preview-path{min-width:280px;max-width:520px;flex:0 1 auto}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;backdrop-filter: blur(6px);box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+.card h2{margin-top:0;font-size:18px;color:#fff}
+.page-list{list-style:none;padding:0;margin:0;color:#fff}
+.page-list li{padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.08)}
+.page-list a{color:#fff;text-decoration:none}
+.page-list a:hover{color:#fff}
+label, .form-label, .card-title{color:#ffffff}
+select.form-select, .input-group-text{color:#ffffff;background:rgba(255,255,255,0.08);}
+select.form-select option{background:#0e1730;color:#ffffff}
+.header-tools .form-select, .header-tools .input-group-text{border-color:rgba(255,255,255,0.5)}
+
+.controls{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.controls input[type=text]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0e1730;color:#ffffff}
+.controls .row{display:flex;gap:10px;align-items:end}
+.controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#ffffff}
+.controls select{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0e1730;color:#ffffff}
+.controls .primary{padding:10px 14px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer}
+.controls .primary:hover{background:#16a34a}
+.controls .primary.processing{background:#16a34a}
+.controls .primary:disabled{opacity:.75;cursor:not-allowed}
+
+.chat pre{background:#0e1730;color:#ffffff;padding:12px;border-radius:10px;overflow:auto;min-height:160px;border:1px solid rgba(255,255,255,0.1)}
+.graph pre{background:#fff}
+
+@media (max-width: 900px){
+  .layout{flex-direction:column}
+}
+
+.preview-area{flex:1 1 auto;padding:12px}
+
+/* Right sidebar */
+.rightbar{width:360px;flex:0 0 auto;border-left:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)}
+.rightbar.collapsed{width:0;flex:0 0 0;overflow:hidden}
+.rightbar-inner{padding:12px;display:flex;flex-direction:column;gap:12px}

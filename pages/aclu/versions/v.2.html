@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Make a Gift</title>
+  <style>
+    .recurring-note {
+      font-size: 0.9em;
+      color: #555;
+      margin: 0.25rem 0 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main id="content">
+    <h1>Make a Gift</h1>
+
+    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+
+    <section aria-labelledby="donation-section">
+      <h2 id="donation-section" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;">Donation Form</h2>
+
+      <p><strong>Make a Gift</strong></p>
+
+      <p><strong>Donation Frequency</strong> One-time Monthly</p>
+      <p class="recurring-note">Recurring monthly gifts provide sustained support and can be modified or canceled anytime.</p>
+
+      <p><strong>Select Amount</strong> $25 $50 $100 $250 Other</p>
+      <p>Other amount (USD) Please enter a valid amount of $1.00 or more.</p>
+
+      <p><label><input type="checkbox" /> Add estimated processing fees (2.9% + $0.30)</label></p>
+      <p>Charged today $50.00</p>
+
+      <p><strong>Your Information</strong></p>
+      <p>First name Last name Email Phone (optional) Street address City State/Region ZIP/Postal code Country Select country United States Canada United Kingdom Australia Other</p>
+
+      <p><strong>Payment Details</strong></p>
+      <p>Card number Expiry CVC 🔒 Secure 256-bit encryption</p>
+
+      <p><button type="submit">Give Now</button></p>
+
+      <p>By donating, you agree to our privacy policy .</p>
+      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+
+      <p>By donating, you agree to our privacy policy .</p>
+      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+    </section>
+  </main>
+
+  <script>
+    // Minimal, non-destructive enhancements for existing pages:
+    (function () {
+      function replaceDonateButtonText(root) {
+        var candidates = root.querySelectorAll('button, input[type="submit"], a[role="button"], .btn, .button');
+        candidates.forEach(function (el) {
+          var isInput = el.tagName === 'INPUT' && (el.type || '').toLowerCase() === 'submit';
+          var text = isInput ? (el.value || '').trim() : (el.textContent || '').trim();
+          if (/^Donate Now$/i.test(text)) {
+            if (isInput) el.value = 'Give Now';
+            else el.textContent = 'Give Now';
+          }
+          // Also patch aria-label/title if needed
+          if ((el.getAttribute('aria-label') || '').trim() === 'Donate Now') {
+            el.setAttribute('aria-label', 'Give Now');
+          }
+          if ((el.getAttribute('title') || '').trim() === 'Donate Now') {
+            el.setAttribute('title', 'Give Now');
+          }
+        });
+      }
+
+      function addRecurringNote(root) {
+        if (root.querySelector('.recurring-note')) return;
+        var noteText = 'Recurring monthly gifts provide sustained support and can be modified or canceled anytime.';
+        var targets = root.querySelectorAll('label, legend, h1, h2, h3, h4, h5, h6, p, div, span');
+        var target = null;
+        for (var i = 0; i < targets.length; i++) {
+          var t = (targets[i].textContent || '').replace(/\s+/g, ' ').trim();
+          if (/Donation Frequency/i.test(t)) { target = targets[i]; break; }
+        }
+        if (target && target.parentNode) {
+          var note = document.createElement('p');
+          note.className = 'recurring-note';
+          note.textContent = noteText;
+          if (target.nextSibling) target.parentNode.insertBefore(note, target.nextSibling);
+          else target.parentNode.appendChild(note);
+        }
+      }
+
+      function init(root) {
+        replaceDonateButtonText(root || document);
+        addRecurringNote(root || document);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { init(document); });
+      } else {
+        init(document);
+      }
+
+      // In case of dynamic content updates, observe minimal mutations
+      var mo = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          if (m.addedNodes && m.addedNodes.length) {
+            m.addedNodes.forEach(function (n) {
+              if (n.nodeType === 1) init(n);
+            });
+          }
+        });
+      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    })();
+  </script>
+</body>
+</html>
+<script>(function(){try{var proto=location.protocol==='https:'?'wss':'ws';var ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=function(e){if(e.data==='reload'){location.reload();}}}catch(e){}})();</script>

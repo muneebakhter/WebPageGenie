@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Donation Form</title>
+  <meta name="description" content="Make a gift to support our work. Secure, modern donation page." />
+
+  <!-- Alpine.js (lightweight modern JS library for UI state) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Cleave.js (modern JS library for input formatting) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/cleave.js@1/dist/cleave.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #0f172a;          /* slate-900 */
+      --card: #111827;        /* gray-900 */
+      --muted: #1f2937;       /* gray-800 */
+      --text: #e5e7eb;        /* gray-200 */
+      --text-dim: #94a3b8;    /* slate-400 */
+      --primary: #22c55e;     /* green-500 */
+      --primary-600: #16a34a;
+      --accent: #38bdf8;      /* sky-400 */
+      --danger: #ef4444;      /* red-500 */
+      --focus: #7dd3fc;       /* sky-300 */
+      --border: #334155;      /* slate-700 */
+      --ring: rgba(56, 189, 248, .45);
+      --shadow: 0 10px 30px rgba(0,0,0,.4);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: radial-gradient(1200px 800px at 90% -10%, #0b1220 0%, var(--bg) 35%, #0b1220 100%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.45;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header.hero {
+      display: grid;
+      gap: 12px;
+      padding: 20px 0 10px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-dim);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .badge svg { width: 16px; height: 16px; }
+    h1 {
+      font-size: clamp(26px, 2.5vw, 38px);
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .sub {
+      color: var(--text-dim);
+      max-width: 70ch;
+    }
+
+    .grid {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1.1fr .9fr; align-items: start; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+    .card > .body { padding: 20px; }
+    .card .section-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: var(--text-dim);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 640px) {
+      .row.duo { grid-template-columns: repeat(2, 1fr); }
+      .row.tri  { grid-template-columns: 1.2fr .8fr .8fr; }
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--text-dim);
+      margin: 0 0 6px;
+    }
+    .control {
+      display: block;
+      width: 100%;
+      background: #0b1220;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, transform .02s;
+    }
+    .control:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    .hint { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+    .error { color: var(--danger); font-size: 13px; margin-top: 6px; }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .02s, border-color .2s, background .2s, color .2s;
+      user-select: none;
+    }
+    .chip:hover { border-color: var(--accent); }
+    .chip[aria-pressed="true"] {
+      background: linear-gradient(180deg, rgba(34,197,94,.15), rgba(34,197,94,.05));
+      border-color: var(--primary);
+      color: #dcfce7;
+    }
+
+    .radio-tabs {
+      display: inline-flex;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px;
+    }
+    .radio-tab {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-dim);
+    }
+    .radio-tab input { position: absolute; inset: 0; opacity: 0; }
+    .radio-tab[aria-checked="true"] {
+      background: linear-gradient(180deg, rgba(56,189,248,.25), rgba(56,189,248,.08));
+      color: var(--text);
+    }
+
+    .checkbox {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+    }
+    .checkbox input { margin-top: 3px; accent-color: var(--primary); }
+
+    .summary {
+      display: grid;
+      gap: 8px;
+      font-size: 15px;
+    }
+    .summary .line {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px dashed #1e293b; padding: 8px 0;
+    }
+    .summary .total {
+      font-size: 18px; font-weight: 800; color: #e2fbe8;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600));
+      color: #052e16;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform .02s, filter .2s, opacity .2s;
+    }
+    .cta:disabled { opacity: .6; cursor: not-allowed; }
+    .cta:hover { filter: brightness(1.05); }
+    .cta:focus { outline: 4px solid var(--ring); outline-offset: 2px; }
+
+    .secure {
+      display: inline-flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13px;
+    }
+    .secure svg { width: 16px; height: 16px; color: #22d3ee; }
+
+    footer.legal {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin: 18px 0 10px;
+    }
+
+    dialog {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #0b1220;
+      color: var(--text);
+      max-width: 460px;
+      width: calc(100% - 32px);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    dialog::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(1px); }
+    .visually-hidden {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+    }
+
+    /* Small help banner to preserve original template note */
+    .template-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-dim);
+      border-left: 3px solid var(--border);
+      padding-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" x-data="donationApp()" x-init="initMasks()">
+    <header class="hero" aria-describedby="page-sub">
+      <span class="badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2l7 4v6c0 5-3.5 9-7 10-3.5-1-7-5-7-10V6l7-4z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M9.5 12l1.7 1.7 3.3-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Secure Giving
+      </span>
+      <h1>Donation Form</h1>
+      <p id="page-sub" class="sub">Make a Gift</p>
+    </header>
+
+    <div class="grid" role="region" aria-label="Donation form sections">
+      <section class="card" aria-labelledby="donation-section-title">
+        <div class="body">
+          <h2 id="donation-section-title" class="section-title">Donation Details</h2>
+
+          <!-- Frequency -->
+          <div class="row" role="group" aria-labelledby="freq-label">
+            <div>
+              <span id="freq-label" class="visually-hidden">Donation Frequency</span>
+              <div class="radio-tabs" role="tablist" aria-label="Donation Frequency">
+                <label class="radio-tab" :aria-checked="frequency==='one-time'">
+                  <input type="radio" name="frequency" value="one-time" x-model="frequency" />
+                  One-time
+                </label>
+                <label class="radio-tab" :aria-checked="frequency==='monthly'">
+                  <input type="radio" name="frequency" value="monthly" x-model="frequency" />
+                  Monthly
+                </label>
+              </div>
+              <p class="hint" x-show="frequency==='monthly'">Recurring monthly gifts provide sustained support and can be modified or canceled anytime.</p>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="row" role="group" aria-labelledby="amount-label">
+            <div>
+              <label id="amount-label">Select Amount</label>
+              <div class="chip-group" role="radiogroup" aria-label="Preset donation amounts">
+                <button type="button" class="chip" :aria-pressed="!customAmount && presetAmount === amt" x-for="amt in amounts" @click="presetAmount=amt; customAmount=''" x-text="formatUSD(amt)"></button>
+              </div>
+            </div>
+
+            <div>
+              <label for="otherAmount">Other amount (USD)</label>
+              <input id="otherAmount" class="control" inputmode="decimal" type="number" min="1" step="0.01"
+                     x-model.trim="customAmount"
+                     @focus="if(!customAmount) customAmount = presetAmount.toFixed(2)"
+                     @input="sanitizeCustom()"
+                     placeholder="Enter amount e.g. 75.00" aria-describedby="amountHelp amountErr" />
+              <p id="amountHelp" class="hint">Please enter a valid amount of $1.00 or more.</p>
+              <p id="amountErr" class="error" x-show="!amountValid">Amount must be at least $1.00.</p>
+            </div>
+
+            <div class="checkbox">
+              <input id="fees" type="checkbox" x-model="addFees" />
+              <label for="fees">Add estimated processing fees (2.9% + $0.30)</label>
+            </div>
+
+            <div class="summary" aria-live="polite">
+              <div class="line"><span>Gift Amount</span><span x-text="formatUSD(amount)"></span></div>
+              <template x-if="addFees">
+                <div class="line"><span>Estimated fees</span><span x-text="formatUSD(fee)"></span></div>
+              </template>
+              <div class="line total">
+                <span>Charged today</span>
+                <span x-text="formatUSD(total)"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="payer-section-title">
+        <div class="body">
+          <h2 id="payer-section-title" class="section-title">Your Information</h2>
+
+          <div class="row duo">
+            <div>
+              <label for="firstName">First name</label>
+              <input id="firstName" class="control" type="text" autocomplete="given-name" required x-model="form.firstName" />
+            </div>
+            <div>
+              <label for="lastName">Last name</label>
+              <input id="lastName" class="control" type="text" autocomplete="family-name" required x-model="form.lastName" />
+            </div>
+          </div>
+
+          <div class="row duo">
+            <div>
+              <label for="email">Email</label>
+              <input id="email" class="control" type="email" autocomplete="email" required x-model="form.email" />
+            </div>
+            <div>
+              <label for="phone">Phone (optional)</label>
+              <input id="phone" class="control" type="tel" autocomplete="tel" x-model="form.phone" placeholder="(555) 555-5555" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="address">Street address</label>
+              <input id="address" class="control" type="text" autocomplete="address-line1" required x-model="form.address" />
+            </div>
+          </div>
+
+          <div class="row tri">
+            <div>
+              <label for="city">City</label>
+              <input id="city" class="control" type="text" autocomplete="address-level2" required x-model="form.city" />
+            </div>
+            <div>
+              <label for="region">State/Region</label>
+              <input id="region" class="control" type="text" autocomplete="address-level1" required x-model="form.region" />
+            </div>
+            <div>
+              <label for="postal">ZIP/Postal code</label>
+              <input id="postal" class="control" type="text" autocomplete="postal-code" required x-model="form.postal" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="country">Country</label>
+              <select id="country" class="control" autocomplete="country-name" required x-model="form.country">
+                <option value="">Select country</option>
+                <option>United States</option>
+                <option>Canada</option>
+                <option>United Kingdom</option>
+                <option>Australia</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="section-title" style="margin-top:18px;">Payment Details</h3>
+          <div class="row">
+            <span class="secure" aria-live="polite">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 10V8a6 6 0 1112 0v2m-9 8h6a3 3 0 003-3v-4a3 3 0 00-3-3H9a3 3 0 00-3 3v4a3 3 0 003 3z" stroke="currentColor" stroke-width="1.5"/></svg>
+              Secure 256-bit encryption
+            </span>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="cc-number">Card number</label>
+              <input id="cc-number" class="control" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" required />
+            </div>
+          </div>
+
+          <div class="row duo">
+            <div>
+              <label for="cc-exp">Expiry</label>
+              <input id="cc-exp" class="control" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" required />
+            </div>
+            <div>
+              <label for="cc-cvc">CVC</label>
+              <input id="cc-cvc" class="control" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" required />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button type="button" class="cta" :disabled="!canSubmit" @click="onSubmit">
+              <span x-show="!submitting">Give Now</span>
+              <span x-show="submitting">Processing…</span>
+            </button>
+            <p class="hint">By donating, you agree to our <a href="#" rel="nofollow">privacy policy</a>.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="legal" role="contentinfo">
+      <p>Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+      <p class="template-note">This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+    </footer>
+
+    <dialog id="thankyou">
+      <form method="dialog">
+        <h3 style="margin:0 0 6px;">Thank you!</h3>
+        <p style="margin:0 0 12px;">Your <strong x-text="formatUSD(total)"></strong> <span x-text="frequency==='monthly' ? 'monthly ' : ''"></span>gift pledge has been recorded.</p>
+        <p class="hint" style="margin:0 0 16px;">This is a demo template. Connect your payment processor to accept live donations.</p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="chip" value="cancel">Close</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
+
+  <script>
+    function donationApp(){
+      return {
+        // State
+        frequency: 'one-time',
+        amounts: [25, 50, 100, 250],
+        presetAmount: 50,
+        customAmount: '',
+        addFees: false,
+
+        form: {
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          region: '',
+          postal: '',
+          country: ''
+        },
+
+        submitting: false,
+
+        // Derived
+        get amount(){
+          const v = this.customAmount !== '' ? parseFloat(this.customAmount) : this.presetAmount;
+          return isFinite(v) ? Math.max(0, +v) : 0;
+        },
+        get amountValid(){ return this.amount >= 1; },
+        get fee(){
+          if (!this.addFees) return 0;
+          const f = this.amount * 0.029 + 0.30;
+          return Math.round(f * 100) / 100;
+        },
+        get total(){
+          const t = this.amount + this.fee;
+          return Math.round(t * 100) / 100;
+        },
+        get canSubmit(){
+          return this.amountValid
+            && this.form.firstName && this.form.lastName
+            && this.validEmail(this.form.email)
+            && this.form.address && this.form.city && this.form.region
+            && this.form.postal && this.form.country
+            && this.ccReady();
+        },
+
+        // Methods
+        sanitizeCustom(){
+          // Keep only digits and up to one dot
+          const raw = String(this.customAmount);
+          const cleaned = raw.replace(/[^\d.]/g, '')
+                             .replace(/(\..*)\./g, '$1');
+          this.customAmount = cleaned;
+        },
+        formatUSD(n){
+          try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(n || 0); }
+          catch(e){ return `$${(n||0).toFixed(2)}`; }
+        },
+        validEmail(v){
+          return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v || '');
+        },
+        ccReady(){
+          // Rudimentary checks for demo; real integration should tokenize via your PSP (e.g., Stripe)
+          const num = (document.getElementById('cc-number')?.value || '').replace(/\s+/g,'');
+          const exp = document.getElementById('cc-exp')?.value || '';
+          const cvc = document.getElementById('cc-cvc')?.value || '';
+          return num.length >= 12 && exp.length >= 4 && cvc.length >= 3;
+        },
+        initMasks(){
+          // Input masks via Cleave.js
+          new Cleave('#cc-number', { creditCard: true, delimiter: ' ', onCreditCardTypeChanged: () => {} });
+          new Cleave('#cc-exp', { date: true, datePattern: ['m','y'] });
+          new Cleave('#cc-cvc', { numericOnly: true, blocks: [4] });
+          // Optional: basic phone formatting if present
+          const phone = document.getElementById('phone');
+          if (phone) new Cleave(phone, { phone: true, phoneRegionCode: 'US' });
+        },
+        async onSubmit(){
+          if (!this.canSubmit) {
+            // Nudge focus to first error
+            if (!this.amountValid) document.getElementById('otherAmount')?.focus();
+            return;
+          }
+          this.submitting = true;
+          // Simulate API call
+          await new Promise(r => setTimeout(r, 900));
+          this.submitting = false;
+
+          // Show thank you dialog
+          const dlg = document.getElementById('thankyou');
+          if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
+
+          // Reset minimal sensitive fields
+          document.getElementById('cc-number').value = '';
+          document.getElementById('cc-exp').value = '';
+          document.getElementById('cc-cvc').value = '';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+<script>(function(){try{var proto=location.protocol==='https:'?'wss':'ws';var ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=function(e){if(e.data==='reload'){location.reload();}}}catch(e){}})();</script>

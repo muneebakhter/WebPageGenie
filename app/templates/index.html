@@ -4,43 +4,132 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WebPageGenie</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <header>
-    <h1>WebPageGenie</h1>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/graph">LangGraph</a>
-    </nav>
-  </header>
-
-  <main>
-    <section>
-      <h2>Pages</h2>
-      <ul>
-        {% for p in pages %}
-        <li><a href="/page?id={{ p }}">{{ p }}</a></li>
-        {% endfor %}
-      </ul>
-    </section>
-
-    <section class="chat">
-      <h2>Ask WebPageGenie</h2>
-      <form id="chat-form">
-        <input type="text" id="chat-input" placeholder="Ask to create or edit a page..." />
-        <select id="page-select">
-          <option value="">(no page)</option>
+    <div class="brand">
+      <button id="toggle-sidebar" class="btn btn-outline-light btn-sm me-2" type="button" aria-pressed="false" aria-label="Toggle left sidebar">&lt;</button>
+      <img src="/static/logo.svg" alt="Web Page Genie" class="logo" onerror="this.style.display='none'" />
+      <h1>Web Page Genie</h1>
+    </div>
+    <nav class="d-flex align-items-center gap-2 flex-nowrap header-tools">
+      <div class="input-group input-group-sm" id="preview-path">
+        <span class="input-group-text bg-transparent text-white border-white-50">Preview</span>
+        <span class="input-group-text bg-transparent text-white border-white-50">/pages/</span>
+        <select id="preview-slug" class="form-select form-select-sm bg-transparent text-white" style="border-color: rgba(255,255,255,0.5);">
           {% for p in pages %}
           <option value="{{ p }}">{{ p }}</option>
           {% endfor %}
         </select>
-        <button type="submit">Send</button>
-      </form>
-      <pre id="chat-output"></pre>
-    </section>
+        <span class="input-group-text bg-transparent text-white border-white-50">/index.html</span>
+      </div>
+      <div class="btn-group ms-2" role="group" aria-label="Version navigation">
+        <button id="prev-version" class="btn btn-success btn-sm" type="button" title="Older version">← Prev</button>
+        <button id="next-version" class="btn btn-success btn-sm" type="button" title="Newer version">Next →</button>
+      </div>
+      <span id="version-label" class="text-white-75 small ms-2"></span>
+      <button id="edit-context" class="btn btn-outline-light btn-sm ms-2" type="button" title="Edit system context" data-bs-toggle="modal" data-bs-target="#contextModal">Edit Context</button>
+      <button id="pick-element" class="btn btn-outline-light btn-sm ms-2" type="button" title="Pick element in preview">Pick Element</button>
+      <button id="toggle-right" class="btn btn-outline-light btn-sm ms-auto" type="button" aria-pressed="false" aria-label="Toggle LangGraph sidebar">&gt;</button>
+    </nav>
+  </header>
+
+  <main class="py-3">
+    <div class="layout">
+      <!-- Pinned collapsible sidebar -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-inner">
+          <div class="card bg-transparent border-0">
+            <div class="card-body">
+              <h5 class="card-title text-white mb-3">Pages</h5>
+              <ul class="page-list text-white">
+                {% for p in pages %}
+                <li><a href="/pages/{{ p }}/index.html" target="_blank" rel="noopener">{{ p }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          <div class="card bg-transparent border-0 chat">
+            <div class="card-body">
+              <h5 class="card-title text-white">Ask WebPageGenie</h5>
+              <form id="chat-form" class="controls">
+                <input type="text" id="chat-input" class="form-control" placeholder="Ask to create or edit a page..." />
+                <div class="row mt-2">
+                  <div class="col-6">
+                    <label class="form-label text-white mb-1"><span>Page</span></label>
+                    <select id="page-select" class="form-select">
+                      <option value="">+New Page</option>
+                      {% for p in pages %}
+                      <option value="{{ p }}">{{ p }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label text-white mb-1"><span>Retrieval</span></label>
+                    <select id="retrieval-method" class="form-select">
+                      <option value="vector" selected>Vector</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="d-grid mt-2">
+                  <button type="submit" class="btn btn-success">Send</button>
+                </div>
+              </form>
+              <pre id="chat-output" class="mt-2"></pre>
+            </div>
+          </div>
+          <div class="mt-auto pt-2 d-grid text-center text-white-50 small">Sidebar</div>
+        </div>
+      </aside>
+
+      <!-- Preview area (fills remaining space) -->
+      <section id="preview-area" class="preview-area">
+        <div class="card flex-fill" id="preview-card">
+          <div class="card-body d-flex flex-column" style="gap: 8px;">
+            <div class="flex-fill">
+              <iframe id="preview-frame" src="about:blank" class="w-100" style="height:calc(100vh - 140px); border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:#fff"></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right sidebar (LangGraph), collapsible like the left -->
+      <aside id="rightbar" class="rightbar collapsed">
+        <div class="rightbar-inner">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="m-0 text-white">LangGraph</h6>
+          </div>
+          <iframe src="/graph" title="LangGraph" class="w-100" style="height: calc(100vh - 110px); border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:#fff"></iframe>
+        </div>
+      </aside>
+    </div>
   </main>
 
+  <!-- Context Modal -->
+  <div class="modal fade" id="contextModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background:#0b1220; color:#fff;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Edit System Context</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <textarea id="context-text" class="form-control" rows="10" style="background:#0e1730; color:#fff; border:1px solid rgba(255,255,255,0.15)"></textarea>
+          <div class="form-text text-white-50 mt-2">This context is sent with your request to guide the model. It defaults to an expert SPA design brief.</div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="save-context" class="btn btn-success" data-bs-dismiss="modal">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   <script src="/static/client.js"></script>
 </body>
 </html>

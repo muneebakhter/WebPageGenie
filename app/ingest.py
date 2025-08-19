@@ -10,7 +10,7 @@ from langchain_openai import OpenAIEmbeddings
 from .db import SessionLocal
 from .vectors import upsert_chunks
 
-EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-large")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
@@ -65,7 +65,8 @@ def _extract_dom_chunks(soup: BeautifulSoup) -> List[Tuple[str, str]]:
 
 
 def ingest_single_page(path: Path) -> None:
-    slug = path.stem
+    # Support both legacy pages/*.html and new pages/<slug>/index.html
+    slug = path.parent.name if path.name == "index.html" and path.parent.name else path.stem
     html = path.read_text(encoding="utf-8")
     soup = BeautifulSoup(html, "lxml")
     for script in soup(["script", "style"]):
@@ -104,6 +105,12 @@ def ingest_single_page(path: Path) -> None:
 
 
 def ingest_all_pages(pages_dir: Path) -> None:
-    pages = list(pages_dir.glob("*.html"))
-    for p in pages:
+    # Legacy flat files
+    for p in pages_dir.glob("*.html"):
         ingest_single_page(p)
+    # New per-project directories with index.html
+    for d in pages_dir.iterdir():
+        if d.is_dir():
+            idx = d / "index.html"
+            if idx.exists():
+                ingest_single_page(idx)

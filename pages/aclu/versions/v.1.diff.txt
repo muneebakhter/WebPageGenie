@@ -1,0 +1,582 @@
+--- previous
++++ current
+@@ -1,498 +1,117 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-  <meta charset="utf-8">
+-  <title>ACLU Donation Page</title>
+-  <meta name="viewport" content="width=device-width, initial-scale=1">
+-  <meta name="description" content="Donate to support civil liberties and civil rights. Make a one-time or monthly gift.">
++  <meta charset="utf-8" />
++  <meta name="viewport" content="width=device-width,initial-scale=1" />
++  <title>Make a Gift</title>
+   <style>
+-    :root {
+-      --brand: #1e63d0;
+-      --brand-dark: #124a9c;
+-      --accent: #0f2b46;
+-      --text: #1b1b1b;
+-      --muted: #6b7280;
+-      --bg: #f7f8fa;
+-      --white: #fff;
+-      --error: #c0392b;
+-      --focus: #0ea5e9;
+-      --radius: 10px;
++    .recurring-note {
++      font-size: 0.9em;
++      color: #555;
++      margin: 0.25rem 0 0.75rem;
+     }
+-    * { box-sizing: border-box; }
+-    body {
+-      margin: 0;
+-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+-      color: var(--text);
+-      background: var(--bg);
+-      line-height: 1.5;
+-    }
+-    a { color: var(--brand); text-decoration: none; }
+-    a:hover { text-decoration: underline; }
+-    header {
+-      background: var(--white);
+-      border-bottom: 1px solid #e5e7eb;
+-    }
+-    .wrap {
+-      max-width: 1080px;
+-      margin: 0 auto;
+-      padding: 16px;
+-    }
+-    .brand {
+-      display: flex;
+-      align-items: center;
+-      gap: 12px;
+-    }
+-    .brand img {
+-      width: 140px;
+-      height: 40px;
+-      object-fit: contain;
+-      border-radius: 4px;
+-      background: #e5e7eb;
+-    }
+-    .hero {
+-      background: linear-gradient(180deg, rgba(30,99,208,0.08), rgba(30,99,208,0));
+-      padding: 24px 0 8px;
+-    }
+-    .hero-grid {
+-      display: grid;
+-      grid-template-columns: 1.2fr 1fr;
+-      gap: 24px;
+-      align-items: center;
+-    }
+-    .hero img {
+-      width: 100%;
+-      height: 100%;
+-      max-height: 380px;
+-      object-fit: cover;
+-      border-radius: var(--radius);
+-      background: #dbeafe;
+-    }
+-    h1 {
+-      margin: 0 0 8px;
+-      font-size: clamp(28px, 4vw, 40px);
+-      line-height: 1.2;
+-      color: var(--accent);
+-    }
+-    .lead { color: #334155; font-size: 1.05rem; margin: 0 0 16px; }
+-    .donate-card {
+-      background: var(--white);
+-      border: 1px solid #e5e7eb;
+-      border-radius: var(--radius);
+-      padding: 20px;
+-      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+-    }
+-    form .row {
+-      display: grid;
+-      grid-template-columns: 1fr 1fr;
+-      gap: 12px;
+-    }
+-    @media (max-width: 900px) {
+-      .hero-grid { grid-template-columns: 1fr; }
+-      form .row { grid-template-columns: 1fr; }
+-    }
+-    fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+-    legend { font-weight: 700; margin-bottom: 8px; color: var(--accent); }
+-    .choices {
+-      display: flex;
+-      flex-wrap: wrap;
+-      gap: 8px;
+-    }
+-    .chip {
+-      display: inline-flex;
+-      align-items: center;
+-      justify-content: center;
+-      padding: 10px 14px;
+-      border: 1px solid #cbd5e1;
+-      border-radius: 999px;
+-      background: #fff;
+-      color: #0f172a;
+-      cursor: pointer;
+-      user-select: none;
+-      transition: all .15s ease;
+-      font-weight: 600;
+-      min-width: 84px;
+-      text-align: center;
+-    }
+-    .chip input { position: absolute; opacity: 0; pointer-events: none; }
+-    .chip[aria-checked="true"] {
+-      background: var(--brand);
+-      color: #fff;
+-      border-color: var(--brand);
+-      box-shadow: 0 0 0 2px rgba(30,99,208,0.15);
+-    }
+-    label { display: block; font-weight: 600; margin-bottom: 6px; }
+-    input, select, textarea {
+-      width: 100%;
+-      padding: 10px 12px;
+-      border: 1px solid #cbd5e1;
+-      border-radius: 8px;
+-      background: #fff;
+-      font: inherit;
+-      color: var(--text);
+-    }
+-    input:focus, select:focus, textarea:focus, .chip:focus-visible, button:focus-visible {
+-      outline: 3px solid var(--focus);
+-      outline-offset: 2px;
+-    }
+-    .muted { color: var(--muted); font-size: 0.95rem; }
+-    .inline {
+-      display: flex;
+-      align-items: center;
+-      gap: 10px;
+-    }
+-    .supporting {
+-      display: grid;
+-      grid-template-columns: 1fr 1fr;
+-      gap: 16px;
+-      margin: 18px 0 6px;
+-    }
+-    .supporting img {
+-      width: 100%;
+-      height: 140px;
+-      object-fit: cover;
+-      border-radius: 8px;
+-      background: #e2e8f0;
+-    }
+-    .total {
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-      background: #eef2ff;
+-      border: 1px solid #c7d2fe;
+-      color: #111827;
+-      padding: 10px 12px;
+-      border-radius: 8px;
+-      margin: 12px 0;
+-      font-weight: 700;
+-    }
+-    .btn {
+-      display: inline-flex;
+-      align-items: center;
+-      justify-content: center;
+-      gap: 8px;
+-      padding: 12px 16px;
+-      border: 0;
+-      border-radius: 8px;
+-      cursor: pointer;
+-      font-weight: 700;
+-    }
+-    .btn-primary { background: var(--brand); color: #fff; }
+-    .btn-primary:hover { background: var(--brand-dark); }
+-    .secure {
+-      display: flex;
+-      align-items: center;
+-      gap: 8px;
+-      color: var(--muted);
+-      font-size: 0.95rem;
+-      margin-top: 8px;
+-    }
+-    .secure img {
+-      width: 84px;
+-      height: 24px;
+-      object-fit: contain;
+-      background: #f1f5f9;
+-      border-radius: 4px;
+-    }
+-    .footnotes {
+-      font-size: 0.9rem;
+-      color: var(--muted);
+-      margin-top: 14px;
+-    }
+-    footer {
+-      margin-top: 24px;
+-      padding: 24px 0;
+-      color: #475569;
+-    }
+-    .error { color: var(--error); font-size: 0.95rem; display: none; }
+   </style>
+ </head>
+ <body>
+-  <header>
+-    <div class="wrap brand" role="banner">
+-      <img src="./images/aclu-wordmark-placeholder.png" alt="Simple, bold blue 'ACLU' wordmark on white background; flat vector logo style, high-contrast, centered">
+-      <div aria-hidden="true" style="font-weight:800; letter-spacing:0.02em; color:#0f172a;">Donate</div>
+-    </div>
+-  </header>
++  <main id="content">
++    <h1>Make a Gift</h1>
+ 
+-  <main>
+-    <section class="hero">
+-      <div class="wrap hero-grid">
+-        <div>
+-          <h1>Defend Civil Liberties. Donate Today.</h1>
+-          <p class="lead">Your gift powers legal challenges, advocacy, and community organizing to protect the rights and freedoms of everyone.</p>
++    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
++    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+ 
+-          <div class="donate-card" role="region" aria-labelledby="donation-form-title">
+-            <h2 id="donation-form-title" style="margin:0 0 10px; font-size:1.25rem; color:#0f172a;">Make a Gift</h2>
+-            <form id="donation-form" action="#" method="post" novalidate>
+-              <fieldset>
+-                <legend>Donation Frequency</legend>
+-                <div class="choices" role="radiogroup" aria-label="Donation Frequency">
+-                  <label class="chip" tabindex="0" data-toggle="freq" data-value="once" aria-checked="true" role="radio">
+-                    <input type="radio" name="frequency" value="once" checked> One-time
+-                  </label>
+-                  <label class="chip" tabindex="0" data-toggle="freq" data-value="monthly" aria-checked="false" role="radio">
+-                    <input type="radio" name="frequency" value="monthly"> Monthly
+-                  </label>
+-                </div>
+-              </fieldset>
++    <section aria-labelledby="donation-section">
++      <h2 id="donation-section" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;">Donation Form</h2>
+ 
+-              <fieldset>
+-                <legend>Select Amount</legend>
+-                <div class="choices" role="radiogroup" aria-label="Donation Amount">
+-                  <label class="chip" tabindex="0" data-toggle="amount" data-value="25" aria-checked="false" role="radio">
+-                    <input type="radio" name="amountChoice" value="25"> $25
+-                  </label>
+-                  <label class="chip" tabindex="0" data-toggle="amount" data-value="50" aria-checked="true" role="radio">
+-                    <input type="radio" name="amountChoice" value="50" checked> $50
+-                  </label>
+-                  <label class="chip" tabindex="0" data-toggle="amount" data-value="100" aria-checked="false" role="radio">
+-                    <input type="radio" name="amountChoice" value="100"> $100
+-                  </label>
+-                  <label class="chip" tabindex="0" data-toggle="amount" data-value="250" aria-checked="false" role="radio">
+-                    <input type="radio" name="amountChoice" value="250"> $250
+-                  </label>
+-                  <label class="chip" tabindex="0" data-toggle="amount" data-value="other" aria-checked="false" role="radio">
+-                    <input type="radio" name="amountChoice" value="other"> Other
+-                  </label>
+-                </div>
+-                <div style="margin-top:10px;">
+-                  <label for="otherAmount" class="muted">Other amount (USD)</label>
+-                  <input id="otherAmount" name="otherAmount" type="number" inputmode="decimal" min="1" step="0.01" placeholder="Enter amount" disabled aria-disabled="true">
+-                  <div id="amountError" class="error">Please enter a valid amount of $1.00 or more.</div>
+-                </div>
+-                <div class="inline" style="margin-top:10px;">
+-                  <input type="checkbox" id="coverFees" name="coverFees">
+-                  <label for="coverFees" class="muted" style="margin:0;">Add estimated processing fees (2.9% + $0.30)</label>
+-                </div>
+-                <div class="total" aria-live="polite">
+-                  <div>Charged today</div>
+-                  <div id="grandTotal">$50.00</div>
+-                </div>
+-              </fieldset>
++      <p><strong>Make a Gift</strong></p>
+ 
+-              <fieldset>
+-                <legend>Your Information</legend>
+-                <div class="row">
+-                  <div>
+-                    <label for="firstName">First name</label>
+-                    <input id="firstName" name="firstName" autocomplete="given-name" required>
+-                  </div>
+-                  <div>
+-                    <label for="lastName">Last name</label>
+-                    <input id="lastName" name="lastName" autocomplete="family-name" required>
+-                  </div>
+-                </div>
+-                <div class="row">
+-                  <div>
+-                    <label for="email">Email</label>
+-                    <input id="email" name="email" type="email" autocomplete="email" required>
+-                  </div>
+-                  <div>
+-                    <label for="phone">Phone (optional)</label>
+-                    <input id="phone" name="phone" type="tel" autocomplete="tel">
+-                  </div>
+-                </div>
+-                <div style="margin-top:8px;">
+-                  <label for="address">Street address</label>
+-                  <input id="address" name="address" autocomplete="address-line1">
+-                </div>
+-                <div class="row" style="margin-top:8px;">
+-                  <div>
+-                    <label for="city">City</label>
+-                    <input id="city" name="city" autocomplete="address-level2">
+-                  </div>
+-                  <div>
+-                    <label for="region">State/Region</label>
+-                    <input id="region" name="region" autocomplete="address-level1">
+-                  </div>
+-                </div>
+-                <div class="row" style="margin-top:8px;">
+-                  <div>
+-                    <label for="postal">ZIP/Postal code</label>
+-                    <input id="postal" name="postal" autocomplete="postal-code">
+-                  </div>
+-                  <div>
+-                    <label for="country">Country</label>
+-                    <select id="country" name="country" autocomplete="country-name">
+-                      <option value="">Select country</option>
+-                      <option value="US">United States</option>
+-                      <option value="CA">Canada</option>
+-                      <option value="GB">United Kingdom</option>
+-                      <option value="AU">Australia</option>
+-                      <option value="Other">Other</option>
+-                    </select>
+-                  </div>
+-                </div>
+-              </fieldset>
++      <p><strong>Donation Frequency</strong> One-time Monthly</p>
++      <p class="recurring-note">Recurring monthly gifts provide sustained support and can be modified or canceled anytime.</p>
+ 
+-              <fieldset>
+-                <legend>Payment Details</legend>
+-                <div class="row">
+-                  <div>
+-                    <label for="cardNumber">Card number</label>
+-                    <input id="cardNumber" name="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" required>
+-                  </div>
+-                  <div class="row" style="gap:8px;">
+-                    <div>
+-                      <label for="exp">Expiry</label>
+-                      <input id="exp" name="exp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" required>
+-                    </div>
+-                    <div>
+-                      <label for="cvc">CVC</label>
+-                      <input id="cvc" name="cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123" required>
+-                    </div>
+-                  </div>
+-                </div>
+-                <div class="secure">
+-                  <span aria-hidden="true">🔒</span>
+-                  <span>Secure 256-bit encryption</span>
+-                  <img src="./images/security-badges-placeholder.png" alt="Security trust badges: lock icon, SSL certificate seal, and credit card brand icons in a clean row on white background">
+-                </div>
+-              </fieldset>
++      <p><strong>Select Amount</strong> $25 $50 $100 $250 Other</p>
++      <p>Other amount (USD) Please enter a valid amount of $1.00 or more.</p>
+ 
+-              <button class="btn btn-primary" type="submit" id="donateBtn">
+-                Donate Now
+-              </button>
+-              <div class="footnotes">
+-                <p>
+-                  By donating, you agree to our <a href="#" rel="nofollow">privacy policy</a>.
+-                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.
+-                </p>
+-              </div>
+-            </form>
+-          </div>
+-        </div>
+-        <div>
+-          <img src="./images/hero-placeholder.jpg" alt="Uplifting, photojournalism-style image of a diverse crowd at a peaceful civil rights rally, people smiling and holding signs reading 'Liberty' and 'Justice', soft morning light, shallow depth of field, natural colors, candid composition">
+-          <div class="supporting">
+-            <img src="./images/volunteers-placeholder.jpg" alt="Group of volunteers in blue T-shirts organizing know-your-rights pamphlets at a community table, inclusive mix of ages and backgrounds, bright daylight, realistic photography">
+-            <img src="./images/courtroom-placeholder.jpg" alt="Respectful scene inside a courthouse hallway where attorneys consult a client, professional attire, warm natural light, documentary style, high resolution">
+-          </div>
+-        </div>
+-      </div>
+-    </section>
++      <p><label><input type="checkbox" /> Add estimated processing fees (2.9% + $0.30)</label></p>
++      <p>Charged today $50.00</p>
+ 
+-    <section aria-labelledby="impact-title">
+-      <div class="wrap" style="margin-top: 18px;">
+-        <h2 id="impact-title" style="margin-bottom:8px; color:#0f172a;">Your Impact</h2>
+-        <p class="muted" style="margin-top:0;">Every contribution helps protect free speech, voting rights, reproductive freedom, LGBTQ+ rights, privacy, and more.</p>
+-      </div>
++      <p><strong>Your Information</strong></p>
++      <p>First name Last name Email Phone (optional) Street address City State/Region ZIP/Postal code Country Select country United States Canada United Kingdom Australia Other</p>
++
++      <p><strong>Payment Details</strong></p>
++      <p>Card number Expiry CVC 🔒 Secure 256-bit encryption</p>
++
++      <p><button type="submit">Give Now</button></p>
++
++      <p>By donating, you agree to our privacy policy .</p>
++      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
++
++      <p>By donating, you agree to our privacy policy .</p>
++      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+     </section>
+   </main>
+ 
+-  <footer>
+-    <div class="wrap">
+-      <p class="muted">This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+-    </div>
+-  </footer>
+-
+-  <noscript>
+-    <div class="wrap" style="color:#b91c1c; margin-bottom:16px;">
+-      JavaScript is required to calculate totals and enhance the donation form. Please enable JavaScript to continue.
+-    </div>
+-  </noscript>
+-
+   <script>
+-    (function(){
+-      const $ = (sel, ctx=document) => ctx.querySelector(sel);
+-      const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+-
+-      const amountChips = $$('[data-toggle="amount"]');
+-      const freqChips   = $$('[data-toggle="freq"]');
+-      const otherAmount = $('#otherAmount');
+-      const amountError = $('#amountError');
+-      const grandTotal  = $('#grandTotal');
+-      const coverFees   = $('#coverFees');
+-
+-      function setChipState(chips, targetValue) {
+-        chips.forEach(chip => {
+-          const isActive = chip.getAttribute('data-value') === targetValue;
+-          chip.setAttribute('aria-checked', isActive ? 'true' : 'false');
+-          const input = chip.querySelector('input[type="radio"]');
+-          if (input) input.checked = isActive;
++    // Minimal, non-destructive enhancements for existing pages:
++    (function () {
++      function replaceDonateButtonText(root) {
++        var candidates = root.querySelectorAll('button, input[type="submit"], a[role="button"], .btn, .button');
++        candidates.forEach(function (el) {
++          var isInput = el.tagName === 'INPUT' && (el.type || '').toLowerCase() === 'submit';
++          var text = isInput ? (el.value || '').trim() : (el.textContent || '').trim();
++          if (/^Donate Now$/i.test(text)) {
++            if (isInput) el.value = 'Give Now';
++            else el.textContent = 'Give Now';
++          }
++          // Also patch aria-label/title if needed
++          if ((el.getAttribute('aria-label') || '').trim() === 'Donate Now') {
++            el.setAttribute('aria-label', 'Give Now');
++          }
++          if ((el.getAttribute('title') || '').trim() === 'Donate Now') {
++            el.setAttribute('title', 'Give Now');
++          }
+         });
+       }
+ 
+-      function getSelectedAmount() {
+-        const active = amountChips.find(c => c.getAttribute('aria-checked') === 'true');
+-        if (!active) return 50;
+-        const val = active.getAttribute('data-value');
+-        if (val === 'other') {
+-          const n = parseFloat(otherAmount.value);
+-          if (Number.isFinite(n) && n >= 1) return n;
+-          return NaN;
++      function addRecurringNote(root) {
++        if (root.querySelector('.recurring-note')) return;
++        var noteText = 'Recurring monthly gifts provide sustained support and can be modified or canceled anytime.';
++        var targets = root.querySelectorAll('label, legend, h1, h2, h3, h4, h5, h6, p, div, span');
++        var target = null;
++        for (var i = 0; i < targets.length; i++) {
++          var t = (targets[i].textContent || '').replace(/\s+/g, ' ').trim();
++          if (/Donation Frequency/i.test(t)) { target = targets[i]; break; }
+         }
+-        return parseFloat(val);
++        if (target && target.parentNode) {
++          var note = document.createElement('p');
++          note.className = 'recurring-note';
++          note.textContent = noteText;
++          if (target.nextSibling) target.parentNode.insertBefore(note, target.nextSibling);
++          else target.parentNode.appendChild(note);
++        }
+       }
+ 
+-      function formatUSD(n) {
+-        return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
++      function init(root) {
++        replaceDonateButtonText(root || document);
++        addRecurringNote(root || document);
+       }
+ 
+-      function updateTotal() {
+-        const amt = getSelectedAmount();
+-        const valid = Number.isFinite(amt) && amt >= 1;
+-        amountError.style.display = valid ? 'none' : 'block';
+-
+-        let total = valid ? amt : 0;
+-        if (valid && coverFees.checked) {
+-          // Estimated card processing: 2.9% + $0.30
+-          total = +(amt * 1.029 + 0.30).toFixed(2);
+-        }
+-        grandTotal.textContent = formatUSD(total);
++      if (document.readyState === 'loading') {
++        document.addEventListener('DOMContentLoaded', function () { init(document); });
++      } else {
++        init(document);
+       }
+ 
+-      // Initialize default states
+-      setChipState(amountChips, '50');
+-      setChipState(freqChips, 'once');
+-      updateTotal();
+-
+-      amountChips.forEach(chip => {
+-        chip.addEventListener('click', () => {
+-          const v = chip.getAttribute('data-value');
+-          setChipState(amountChips, v);
+-          const isOther = v === 'other';
+-          otherAmount.disabled = !isOther;
+-          otherAmount.setAttribute('aria-disabled', String(!isOther));
+-          if (!isOther) {
+-            otherAmount.value = '';
+-          } else {
+-            otherAmount.focus();
++      // In case of dynamic content updates, observe minimal mutations
++      var mo = new MutationObserver(function (mutations) {
++        mutations.forEach(function (m) {
++          if (m.addedNodes && m.addedNodes.length) {
++            m.addedNodes.forEach(function (n) {
++              if (n.nodeType === 1) init(n);
++            });
+           }
+-          updateTotal();
+-        });
+-        chip.addEventListener('keydown', (e) => {
+-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }
+         });
+       });
+-
+-      otherAmount.addEventListener('input', updateTotal);
+-      coverFees.addEventListener('change', updateTotal);
+-
+-      freqChips.forEach(chip => {
+-        chip.addEventListener('click', () => {
+-          setChipState(freqChips, chip.getAttribute('data-value'));
+-        });
+-        chip.addEventListener('keydown', (e) => {
+-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }
+-        });
+-      });
+-
+-      // Basic client-side validation on submit
+-      $('#donation-form').addEventListener('submit', (e) => {
+-        const amt = getSelectedAmount();
+-        if (!Number.isFinite(amt) || amt < 1) {
+-          e.preventDefault();
+-          amountError.style.display = 'block';
+-          otherAmount.focus();
+-          return;
+-        }
+-        // Placeholder handling — prevent actual submission in this template
+-        e.preventDefault();
+-        alert('Thank you for your generous gift of ' + grandTotal.textContent + '!');
+-      });
++      mo.observe(document.documentElement, { childList: true, subtree: true });
+     })();
+   </script>
+ </body>
+ </html>
+-<script>(function(){try{var proto=location.protocol==='https:'?'wss':'ws';var ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=function(e){if(e.data==='reload'){location.reload();}}}catch(e){}})();</script>
