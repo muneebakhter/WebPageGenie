@@ -169,10 +169,31 @@
       try{
         const controller = new AbortController();
         const slug = (pageSel && pageSel.value ? pageSel.value.trim() : '') || (previewSlug && previewSlug.value ? previewSlug.value : null);
+        
+        // Determine if this is a new page and get reference parameters
+        const isNewPage = !!(slug && !pageList.find(p => p.toLowerCase() === slug.toLowerCase()));
+        const referenceUrl = isNewPage && refUrl ? refUrl.value.trim() : null;
+        const extractImages = isNewPage && refImages ? refImages.checked : false;
+        
+        const requestBody = { 
+          message, 
+          page_slug: slug, 
+          retrieval_method: (methodSel && methodSel.value) || 'vector', 
+          selected_html: (selectedNode||null), 
+          selected_path: (selectedPath||[]), 
+          system_context: systemContext
+        };
+        
+        // Add new page parameters if applicable
+        if (isNewPage && referenceUrl) {
+          requestBody.reference_url = referenceUrl;
+          requestBody.extract_images = extractImages;
+        }
+        
         const res = await fetch('/api/chat/stream', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message, page_slug: slug, retrieval_method: (methodSel && methodSel.value) || 'vector', selected_html: (selectedNode||null), selected_path: (selectedPath||[]), system_context: systemContext }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal
         });
         if(!res.ok){
