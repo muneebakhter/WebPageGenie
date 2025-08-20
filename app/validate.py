@@ -106,6 +106,7 @@ def scrape_site_with_playwright(url: str, timeout_s: int = 20, save_images: bool
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()
+            page.set_default_timeout(timeout_s * 1000)
             page.goto(url, wait_until="load", timeout=timeout_s * 1000)
             try:
                 page.wait_for_load_state("networkidle", timeout=timeout_s * 1000)

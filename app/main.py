@@ -5,6 +5,8 @@ import shutil
 import asyncio
 from pathlib import Path
 from typing import List
+import time
+import logging
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,6 +44,27 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 ws_manager = ReloadWebSocketManager()
 _langgraph_app = build_graph()
+
+# Basic logger for immediate request/step tracing
+logger = logging.getLogger("webpagegenie")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    t0 = time.perf_counter()
+    logger.info(f"HTTP START {request.method} {request.url.path}")
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        dt = (time.perf_counter() - t0) * 1000.0
+        try:
+            status = getattr(response, 'status_code', '?')
+        except Exception:
+            status = '?'
+        logger.info(f"HTTP END   {request.method} {request.url.path} status={status} dt_ms={dt:.1f}")
 
 
 class ChatRequest(BaseModel):
@@ -151,16 +174,89 @@ async def api_generate_image(req: ImageRequest):
 @app.post("/api/tools/image")
 async def api_tool_image(req: ImageRequest):
     try:
-        info = await generate_image_file_async(
-            prompt=req.prompt,
-            page_slug=req.page_slug,
-            size=(req.size or "1024x1024"),
-            seed=req.seed,
-            debug=True,
-            output_filename=req.output_filename,
-        )
-        return JSONResponse(info)
+        # Implement BFL flow like test.py: create → poll → download sample to output_filename
+        logger.info(f"TOOL image: start prompt='{(req.prompt or '')[:80]}' size={req.size} out={req.output_filename}")
+        if not req.prompt:
+            return JSONResponse(status_code=400, content={"error": "prompt is required"})
+        if not req.output_filename or not req.output_filename.lower().endswith(".png"):
+            return JSONResponse(status_code=400, content={"error": "output_filename (.png) is required"})
+
+        import httpx, os
+        from pathlib import Path
+
+        bfl_key = os.getenv("BFL_API_KEY") or os.getenv("BFL_AI_KEY")
+        if not bfl_key:
+            return JSONResponse(status_code=500, content={"error": "BFL_API_KEY/BFL_AI_KEY not set"})
+
+        # Aspect ratio from size (e.g., 512x512 -> 1:1)
+        ar = "1:1"
+        if req.size and "x" in req.size:
+            try:
+                w, h = [int(x) for x in req.size.lower().split("x", 1)]
+                from math import gcd
+                g = gcd(max(w,1), max(h,1))
+                ar = f"{w//g}:{h//g}"
+            except Exception:
+                pass
+
+        create_url = "https://api.bfl.ai/v1/flux-kontext-pro"
+        headers = {"accept": "application/json", "x-key": bfl_key, "Content-Type": "application/json"}
+        payload = {"prompt": req.prompt, "aspect_ratio": ar}
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=True) as client:
+            r = await client.post(create_url, headers=headers, json=payload)
+            r.raise_for_status()
+            j = r.json()
+            polling_url = j.get("polling_url") or j.get("status_url")
+            if not polling_url:
+                return JSONResponse(status_code=500, content={"error": "No polling_url in response", "response": j})
+
+        # Poll
+        sample_url = None
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), follow_redirects=True) as client:
+            while True:
+                r2 = await client.get(polling_url, headers={"accept": "application/json", "x-key": bfl_key})
+                r2.raise_for_status()
+                st = r2.json()
+                status = (st.get("status") or "").lower()
+                if status == "ready":
+                    # According to test.py: result.sample
+                    try:
+                        sample_url = st["result"]["sample"]
+                    except Exception:
+                        pass
+                    break
+                if (time.perf_counter() - t0) > 180:
+                    return JSONResponse(status_code=504, content={"error": "timeout waiting for image", "last": st})
+                await asyncio.sleep(1)
+
+        if not sample_url:
+            return JSONResponse(status_code=500, content={"error": "no sample url returned"})
+
+        # Download image and save to output_filename
+        out_path = Path(req.output_filename)
+        if not out_path.is_absolute():
+            out_path = (BASE_DIR / out_path).resolve()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0), follow_redirects=True) as client:
+            img = await client.get(sample_url)
+            img.raise_for_status()
+            with open(out_path, "wb") as f:
+                f.write(img.content)
+
+        # Build URL if under known roots
+        if str(out_path).startswith(str(STATIC_DIR)):
+            url = "/static/" + out_path.relative_to(STATIC_DIR).as_posix()
+        elif str(out_path).startswith(str(PAGES_DIR)):
+            url = "/" + out_path.relative_to(BASE_DIR).as_posix()
+        else:
+            url = out_path.as_posix()
+
+        logger.info(f"TOOL image: saved -> {out_path}")
+        return JSONResponse({"ok": True, "path": str(out_path), "url": url, "sample_url": sample_url})
     except Exception as e:
+        logger.exception("TOOL image: error")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/api/tools/validate")
