@@ -29,6 +29,7 @@ from .validate import scrape_site_with_playwright_async
 from .validate import consolidate_to_single_file, assert_single_file_no_external
 from .ingest import ingest_all_pages, ingest_single_page
 from .images import generate_image_file_async
+from .minify import minify_html_with_inlined_assets, get_minification_stats
 from datetime import datetime, timezone
 import difflib
 import re
@@ -596,6 +597,21 @@ def _save_version_and_write_current(slug: str, html_content: str) -> Path:
     out_path = out_dir / "index.html"
     versions_dir = out_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)
+
+    # Apply minification to the HTML content
+    if html_content and html_content.strip():
+        try:
+            original_content = html_content
+            minified_content = minify_html_with_inlined_assets(html_content, aggressive=True)
+            
+            # Log minification stats
+            stats = get_minification_stats(original_content, minified_content)
+            logger.info(f"Minified HTML for {slug}: {stats['original_size']} -> {stats['minified_size']} bytes "
+                       f"({stats['reduction_percent']}% reduction)")
+            
+            html_content = minified_content
+        except Exception as e:
+            logger.warning(f"Minification failed for {slug}: {e}, using original content")
 
     if out_path.exists():
         try:

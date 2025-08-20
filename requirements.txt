@@ -21,3 +21,6 @@ websockets==12.0
 watchfiles==0.22.0
 requests==2.32.3
 httpx==0.27.0
+htmlmin==0.1.12
+cssmin==0.2.0
+jsmin==3.0.1
