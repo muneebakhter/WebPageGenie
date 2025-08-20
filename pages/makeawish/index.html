@@ -1,0 +1,935 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Make-A-Wish — Donate to Grant a Wish</title>
+  <meta name="description" content="Help grant life-changing wishes for children with critical illnesses. Donate to Make-A-Wish and make hope possible." />
+  <!--
+    Note to client:
+    - Per your request to include images scraped from the Make-A-Wish website: I don’t have live browsing in this environment,
+      so I cannot scrape in real-time. I’ve included tasteful, on-brand vector illustrations as placeholders and clearly marked
+      the image slots below with data-image-hint attributes for easy replacement with images from makeawish.org.
+    - To swap in real images, simply replace the <img> src attributes with your desired image URLs or base64 data URIs.
+  -->
+
+  <!-- Bootstrap 5 (minimal subset for this page only) -->
+  <style>
+    :root{
+      --bs-blue:#0d6efd;--bs-indigo:#6610f2;--bs-purple:#6f42c1;--bs-pink:#d63384;--bs-red:#dc3545;--bs-orange:#fd7e14;--bs-yellow:#ffc107;--bs-green:#198754;--bs-teal:#20c997;--bs-cyan:#0dcaf0;--bs-white:#fff;--bs-gray:#6c757d;--bs-gray-dark:#343a40;--bs-primary:#0a6ad7;--bs-primary-600:#0b5fc2;--bs-primary-700:#0a53ad;--bs-secondary:#6c757d;--bs-success:#198754;--bs-info:#0dcaf0;--bs-warning:#ffc107;--bs-danger:#dc3545;--bs-light:#f8f9fa;--bs-dark:#212529;
+      --bs-body-color:#212529;--bs-body-bg:#fff;--bs-border-color:rgba(0,0,0,.125);--bs-link-color:var(--bs-primary);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:1rem;line-height:1.5;color:var(--bs-body-color);background:var(--bs-body-bg)}
+    img{max-width:100%;height:auto}
+    a{color:var(--bs-link-color);text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Container and grid (subset) */
+    .container{width:100%;padding-right:1rem;padding-left:1rem;margin-right:auto;margin-left:auto}
+    @media(min-width:576px){.container{max-width:540px}}
+    @media(min-width:768px){.container{max-width:720px}}
+    @media(min-width:992px){.container{max-width:960px}}
+    @media(min-width:1200px){.container{max-width:1140px}}
+    @media(min-width:1400px){.container{max-width:1320px}}
+    .row{display:flex;flex-wrap:wrap;margin-right:-.75rem;margin-left:-.75rem}
+    .col,.col-6,.col-12,.col-sm-6,.col-md-4,.col-md-6,.col-lg-5,.col-lg-7,.col-lg-4,.col-lg-3{position:relative;width:100%;padding-right:.75rem;padding-left:.75rem}
+    .col{flex:1 0 0%}
+    .col-12{flex:0 0 auto;width:100%}
+    .col-6{flex:0 0 auto;width:50%}
+    @media(min-width:576px){.col-sm-6{flex:0 0 auto;width:50%}}
+    @media(min-width:768px){.col-md-4{flex:0 0 auto;width:33.3333%}.col-md-6{flex:0 0 auto;width:50%}}
+    @media(min-width:992px){
+      .col-lg-5{flex:0 0 auto;width:41.6667%}
+      .col-lg-7{flex:0 0 auto;width:58.3333%}
+      .col-lg-4{flex:0 0 auto;width:33.3333%}
+      .col-lg-3{flex:0 0 auto;width:25%}
+    }
+
+    /* Spacing utilities (subset) */
+    .mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:1rem}.mt-4{margin-top:1.5rem}.mt-5{margin-top:3rem}
+    .mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:1rem}.mb-4{margin-bottom:1.5rem}.mb-5{margin-bottom:3rem}
+    .ms-2{margin-left:.5rem}.me-2{margin-right:.5rem}.me-3{margin-right:1rem}
+    .py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:1rem;padding-bottom:1rem}.py-4{padding-top:1.5rem;padding-bottom:1.5rem}.py-5{padding-top:3rem;padding-bottom:3rem}
+    .px-3{padding-left:1rem;padding-right:1rem}.px-4{padding-left:1.5rem;padding-right:1.5rem}
+    .p-3{padding:1rem}.p-4{padding:1.5rem}
+    .g-3{--g:1rem;margin-right:calc(-1*var(--g)/2);margin-left:calc(-1*var(--g)/2)}
+    .g-3>.col,.g-3>[class^="col-"]{padding-right:calc(var(--g)/2);padding-left:calc(var(--g)/2)}
+
+    /* Display and flex */
+    .d-flex{display:flex}.d-block{display:block}.d-none{display:none}
+    .align-items-center{align-items:center}
+    .justify-content-center{justify-content:center}
+    .justify-content-between{justify-content:space-between}
+    .text-center{text-align:center}
+    .text-start{text-align:left}
+    .text-end{text-align:end}
+
+    /* Typography */
+    h1,h2,h3,h4{margin:0 0 .5rem 0;font-weight:700}
+    .lead{font-size:1.25rem;color:#1b2a4a}
+    .small{font-size:.875rem}
+    .text-muted{color:#6c757d}
+    .text-primary{color:var(--bs-primary)}
+    .fw-bold{font-weight:700}
+    .fw-semibold{font-weight:600}
+
+    /* Buttons */
+    .btn{display:inline-flex;gap:.5rem;align-items:center;justify-content:center;border:1px solid transparent;border-radius:.75rem;padding:.65rem 1rem;font-weight:600;cursor:pointer;transition:all .2s ease;line-height:1.2}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{color:#fff;background:var(--bs-primary);border-color:var(--bs-primary)}
+    .btn-primary:hover{background:var(--bs-primary-600);border-color:var(--bs-primary-600);transform:translateY(-1px)}
+    .btn-light{background:#fff;border-color:#e6e9ef}
+    .btn-light:hover{background:#f7f9fc}
+    .btn-outline-light{color:#fff;background:transparent;border-color:rgba(255,255,255,.6)}
+    .btn-outline-light:hover{background:rgba(255,255,255,.1)}
+    .btn-lg{padding:.85rem 1.25rem;font-size:1.1rem;border-radius:1rem}
+    .btn-group{display:flex;gap:.5rem;flex-wrap:wrap}
+
+    /* Forms */
+    .form-control,.form-select{display:block;width:100%;padding:.65rem .85rem;border:1px solid #d8dee9;border-radius:.75rem;background:#fff;color:#111;transition:border .2s, box-shadow .2s}
+    .form-control:focus,.form-select:focus{outline:0;border-color:var(--bs-primary);box-shadow:0 0 0 .2rem rgba(10,106,215,.15)}
+    .form-check{display:flex;align-items:center;gap:.5rem}
+    .form-check-input{width:1.1rem;height:1.1rem;border:1px solid #cfd6e3;border-radius:.25rem}
+    .input-group{display:flex;width:100%}
+    .input-group>.input-group-text{display:flex;align-items:center;padding:.65rem .75rem;border:1px solid #d8dee9;border-right:0;border-radius:.75rem 0 0 .75rem;background:#f5f7fb;color:#3b4a6b}
+    .input-group>.form-control{border-left:0;border-radius:0 .75rem .75rem 0}
+
+    /* Cards */
+    .card{border:1px solid #e6e9ef;border-radius:1rem;background:#fff;box-shadow:0 .5rem 1.2rem rgba(18,38,63,.05)}
+    .card-body{padding:1.25rem}
+    .card-title{font-size:1.1rem;margin-bottom:.25rem}
+    .card-text{color:#445;opacity:.9}
+
+    /* Navbar */
+    .navbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.8);backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid #eef2f9}
+    .navbar .brand{display:flex;align-items:center;gap:.6rem;font-weight:800;color:#0a2c6e;font-size:1.05rem}
+    .navbar .brand svg{display:block}
+    .nav-actions{display:flex;gap:.5rem;align-items:center}
+
+    /* Hero */
+    .hero{
+      position:relative;overflow:hidden;color:#fff;border-radius:0 0 2rem 2rem;
+      background:radial-gradient(1200px 600px at 80% -10%, #6aa8ff 0%, rgba(10,106,215,0) 60%), linear-gradient(180deg, #0b4fb1 0%, #0a60d4 40%, #0a6ad7 100%);
+    }
+    .hero .container{position:relative;z-index:2}
+    .starfield{position:absolute;inset:0;overflow:hidden;z-index:1}
+    .star{position:absolute;width:2px;height:2px;background:rgba(255,255,255,.9);border-radius:50%;opacity:.8;animation:twinkle 3s infinite ease-in-out}
+    @keyframes twinkle{0%,100%{opacity:.2;transform:scale(.9)}50%{opacity:1;transform:scale(1.2)}}
+    .hero-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:1.25rem;padding:1.25rem;backdrop-filter:blur(6px)}
+    .pill{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:.35rem .7rem;font-weight:600}
+
+    /* Progress */
+    .progress{height:12px;background:#eef2f9;border-radius:999px;overflow:hidden}
+    .progress .progress-bar{height:100%;background:linear-gradient(90deg,#16c4ff,#0a6ad7);width:0;transition:width 1s ease}
+
+    /* Badges */
+    .badge{display:inline-block;padding:.4rem .6rem;border-radius:999px;font-weight:700}
+    .badge-soft{background:#ecf4ff;color:#0a53ad;border:1px solid #d8e8ff}
+
+    /* Modal (bootstrap-like) */
+    .modal{position:fixed;inset:0;z-index:1050;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(13,18,30,.45)}
+    .modal.show{display:flex}
+    .modal-dialog{width:100%;max-width:860px}
+    .modal-content{background:#fff;border-radius:1rem;box-shadow:0 .75rem 2rem rgba(16,24,40,.2);overflow:hidden}
+    .modal-header,.modal-footer{padding:1rem 1.25rem;border-bottom:1px solid #eef2f9}
+    .modal-header{display:flex;align-items:center;justify-content:space-between}
+    .modal-body{padding:1.25rem}
+
+    /* Accordion (FAQ) */
+    .accordion-item{border:1px solid #e6e9ef;border-radius:.75rem;margin-bottom:.75rem;overflow:hidden}
+    .accordion-header{background:#f7f9fc}
+    .accordion-button{display:flex;gap:.75rem;width:100%;text-align:left;background:transparent;border:0;padding:.9rem 1rem;font-weight:600;cursor:pointer}
+    .accordion-button:after{content:"+";margin-left:auto}
+    .accordion-button[aria-expanded="true"]:after{content:"−"}
+    .accordion-body{padding:1rem;display:none}
+    .accordion-body.show{display:block}
+
+    /* Footer */
+    footer{border-top:1px solid #eef2f9;background:#fafcff}
+
+    /* Decorative */
+    .shadow-lg{box-shadow:0 .75rem 2rem rgba(16,24,40,.12)}
+    .rounded-3{border-radius:1.25rem}
+    .rounded-4{border-radius:1.5rem}
+    .glass{background:rgba(255,255,255,.7);backdrop-filter:blur(6px)}
+    .divider{height:1px;background:#eef2f9;margin:1rem 0}
+
+    /* CTA float */
+    .floating-cta{position:fixed;right:1rem;bottom:1rem;z-index:50}
+
+    /* Simple fade/slide */
+    .fade-in{opacity:0;transform:translateY(10px);animation:fadeIn .6s ease forwards}
+    @keyframes fadeIn{to{opacity:1;transform:none}}
+
+    /* Payment brand chips */
+    .brand-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .6rem;border:1px solid #e6e9ef;border-radius:999px;background:#fff;font-weight:600}
+
+    /* Accessibility helpers */
+    .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+
+  <!-- Custom page styles -->
+  <style>
+    .logo-text{letter-spacing:.3px}
+    .hero h1{font-size:clamp(2rem, 4vw + .5rem, 3rem);line-height:1.1}
+    .impact-figure{font-size:2.25rem}
+    .impact-card img{border-radius:1rem}
+    .wish-icon{width:56px;height:56px;border-radius:14px;background:#0a6ad7;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 .5rem 1rem rgba(10,106,215,.25)}
+    .trust-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+    .trust-badge{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px dashed #cfe0ff;border-radius:.75rem;background:#f7fbff}
+    .hero-illus{min-height:280px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+    .donate-amounts .btn{min-width:88px}
+    .amount-input{max-width:240px}
+
+    .carousel{position:relative;overflow:hidden}
+    .carousel-inner{display:flex;transition:transform .45s ease}
+    .carousel-item{flex:0 0 100%}
+    .carousel-controls{display:flex;gap:.5rem;justify-content:center;margin-top:.75rem}
+    .control-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+    .control-dot.active{background:#0a6ad7}
+
+    .success-check{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#12d3ff,#0a6ad7);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 .5rem 1.5rem rgba(10,106,215,.35)}
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar py-2">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="brand" href="#" aria-label="Make-A-Wish Home">
+        <svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stop-color="#12d3ff"/><stop offset="1" stop-color="#0a6ad7"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#g1)" d="M24 3l4.3 11.6 12.5.9-10 7.8 3.5 12L24 28.6 13.7 35.3l3.5-12-10-7.8 12.5-.9L24 3z"/>
+        </svg>
+        <span class="logo-text">Make-A-Wish</span>
+      </a>
+      <div class="nav-actions">
+        <a href="#impact" class="btn btn-light">Our Impact</a>
+        <button class="btn btn-primary" onclick="openModal('donateModal')">Donate</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero py-5">
+    <div class="starfield" aria-hidden="true"></div>
+    <div class="container">
+      <div class="row align-items-center g-3">
+        <div class="col-lg-7">
+          <span class="pill mb-2">Every wish begins with you</span>
+          <h1 class="mb-3 fade-in">Your gift brings hope, strength, and joy to children with critical illnesses.</h1>
+          <p class="lead mb-4">Join a community of wish-granters. 100% secure. Tax-deductible.</p>
+
+          <!-- Quick donate -->
+          <div class="hero-card shadow-lg">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="wish-icon" aria-hidden="true">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.76 5.42h5.7l-4.61 3.35 1.76 5.42L12 12.84 7.39 16.2l1.76-5.42L4.54 7.42h5.7L12 2z" fill="#fff"/></svg>
+                </div>
+                <div>
+                  <div class="fw-bold">Donate now</div>
+                  <div class="small text-muted">Choose an amount or enter your own</div>
+                </div>
+              </div>
+              <div>
+                <span class="badge badge-soft">Secure • Encrypted</span>
+              </div>
+            </div>
+
+            <div class="donate-amounts btn-group mb-3" role="group" aria-label="Suggested donation amounts">
+              <button class="btn btn-light" data-amount="25" onclick="selectAmount(this)">$25</button>
+              <button class="btn btn-light" data-amount="50" onclick="selectAmount(this)">$50</button>
+              <button class="btn btn-light" data-amount="100" onclick="selectAmount(this)">$100</button>
+              <button class="btn btn-light" data-amount="250" onclick="selectAmount(this)">$250</button>
+              <button class="btn btn-light" data-amount="500" onclick="selectAmount(this)">$500</button>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="small text-muted d-block mb-2">Custom amount</label>
+                <div class="input-group amount-input">
+                  <span class="input-group-text">$</span>
+                  <input id="customAmount" type="number" min="1" step="1" class="form-control mono" placeholder="Enter amount" oninput="handleCustomAmount()">
+                </div>
+                <div id="impactNote" class="small text-muted mt-2">Your $50 can provide a wish kid’s celebration kit.</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="small text-muted d-block mb-2">Frequency</label>
+                <div class="btn-group" role="group" aria-label="Donation frequency">
+                  <button id="oneTimeBtn" class="btn btn-light" aria-pressed="true" onclick="setFrequency('once', this)">One-time</button>
+                  <button id="monthlyBtn" class="btn btn-light" aria-pressed="false" onclick="setFrequency('monthly', this)">Monthly</button>
+                </div>
+                <div class="small text-muted mt-2" id="freqNote">A powerful one-time gift to grant a wish.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="small">Tax ID: 86-0481940</div>
+              <button class="btn btn-primary btn-lg" onclick="openModal('donateModal');prefillModal()">Continue</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5 hero-illus">
+          <!-- Decorative illustration (placeholder for real image) -->
+          <div class="text-center">
+            <svg width="100%" height="280" viewBox="0 0 640 320" role="img" aria-label="Hopeful starry sky illustration">
+              <defs>
+                <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#89c9ff"/><stop offset="1" stop-color="#0a6ad7"/>
+                </linearGradient>
+                <radialGradient id="glow" cx="50%" cy="30%" r="40%">
+                  <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+                  <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <rect x="0" y="0" width="640" height="320" fill="url(#sky)"/>
+              <circle cx="320" cy="96" r="120" fill="url(#glow)"/>
+              <g fill="#fff">
+                <circle cx="120" cy="40" r="2"/><circle cx="560" cy="62" r="2"/><circle cx="420" cy="36" r="2"/>
+                <circle cx="220" cy="92" r="2"/><circle cx="510" cy="140" r="2"/><circle cx="70" cy="120" r="2"/>
+              </g>
+              <g transform="translate(90,170)">
+                <rect x="0" y="40" width="460" height="60" rx="10" fill="#fff" opacity=".2"/>
+                <rect x="40" y="0" width="380" height="80" rx="16" fill="#fff" opacity=".2"/>
+                <text x="230" y="50" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="#fff">Every Wish Begins With You</text>
+              </g>
+            </svg>
+          </div>
+          <div class="trust-row mt-3">
+            <div class="trust-badge"><span aria-hidden="true">⭐️⭐️⭐️⭐️</span> <span class="small">Charity Navigator</span></div>
+            <div class="trust-badge"><span class="small">PCI-DSS Secure</span></div>
+            <div class="trust-badge"><span class="small">Tax-deductible</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Impact highlight -->
+  <section id="impact" class="container py-5">
+    <div class="row g-3 align-items-stretch">
+      <div class="col-lg-7">
+        <div class="card impact-card h-100">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <!-- Placeholder image (replace with real Make-A-Wish photo) -->
+                <img data-image-hint="Replace with wish reveal photo from makeawish.org" alt="Wish reveal celebration" src="data:image/svg+xml;utf8,
+                <svg xmlns='http://www.w3.org/2000/svg' width='640' height='420'>
+                  <defs>
+                    <linearGradient id='a' x1='0' y1='0' x2='1' y2='1'>
+                      <stop offset='0' stop-color='%23e8f3ff'/><stop offset='1' stop-color='%23cfe7ff'/>
+                    </linearGradient>
+                  </defs>
+                  <rect width='100%%' height='100%%' rx='18' fill='url(%23a)'/>
+                  <g transform='translate(40,40)' fill='%230a6ad7'>
+                    <circle cx='80' cy='70' r='38' fill='%230a6ad7' opacity='.9'/>
+                    <rect x='150' y='30' rx='10' width='360' height='40' fill='%230a6ad7' opacity='.1'/>
+                    <rect x='150' y='90' rx='10' width='300' height='40' fill='%230a6ad7' opacity='.1'/>
+                    <rect x='150' y='150' rx='10' width='320' height='40' fill='%230a6ad7' opacity='.15'/>
+                  </g>
+                  <g fill='%23ffd84d'>
+                    <circle cx='520' cy='60' r='6'/><circle cx='560' cy='60' r='6'/><circle cx='540' cy='40' r='6'/>
+                  </g>
+                  <text x='50%%' y='92%%' text-anchor='middle' font-family='system-ui' font-size='16' fill='%23556'>Photo placeholder</text>
+                </svg>"/>
+              </div>
+              <div class="col-md-6 d-flex flex-column">
+                <h3 class="mb-2">Your impact at a glance</h3>
+                <p class="text-muted">Together, we’re creating life-changing wishes for children with critical illnesses.</p>
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <div class="impact-figure fw-bold text-primary" id="impactWishes">0</div>
+                    <div class="small text-muted">Wishes funded this month</div>
+                  </div>
+                  <div class="col-6">
+                    <div class="impact-figure fw-bold text-primary" id="impactVolunteers">0</div>
+                    <div class="small text-muted">Volunteers engaged</div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <div class="small fw-semibold">Goal progress</div>
+                    <div class="small" id="progressLabel">0%</div>
+                  </div>
+                  <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+                </div>
+                <div class="small text-muted">Every dollar gets us closer to granting more wishes like trips, room makeovers, and meeting heroes.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div class="wish-icon me-3" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2 7 3-14 2 7h5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <div class="fw-bold">Where your gift goes</div>
+                <div class="small text-muted">Transparent, mission-focused stewardship</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1"><span>Wish experiences</span><span>72%</span></div>
+              <div class="progress"><div class="progress-bar" style="width:72%;background:linear-gradient(90deg,#2ee6a6,#12d3ff)"></div></div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1"><span>Family support</span><span>18%</span></div>
+              <div class="progress"><div class="progress-bar" style="width:18%;background:linear-gradient(90deg,#ffb648,#ff7a59)"></div></div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1"><span>Program services</span><span>10%</span></div>
+              <div class="progress"><div class="progress-bar" style="width:10%;background:linear-gradient(90deg,#a18cff,#6f70ff)"></div></div>
+            </div>
+            <div class="divider"></div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="brand-chip">Visa</span>
+              <span class="brand-chip">Mastercard</span>
+              <span class="brand-chip">Amex</span>
+              <span class="brand-chip">PayPal</span>
+              <span class="small text-muted">and more</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stories carousel -->
+  <section class="container py-5">
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <h3 class="mb-2">Wish stories</h3>
+        <p class="text-muted">See the joy you make possible. Swap in real stories and photos from Make-A-Wish.</p>
+        <button class="btn btn-primary" onclick="openModal('donateModal');prefillModal()">Give now</button>
+      </div>
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-body">
+            <div class="carousel" id="storyCarousel">
+              <div class="carousel-inner" id="carouselInner" style="transform:translateX(0%)">
+                <div class="carousel-item">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                      <!-- Placeholder story image -->
+                      <img alt="Wish kid smiling" data-image-hint="Replace with a Make-A-Wish story image" src="data:image/svg+xml;utf8,
+                      <svg xmlns='http://www.w3.org/2000/svg' width='640' height='400'>
+                        <defs><linearGradient id='b' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e6fffb'/><stop offset='1' stop-color='%23d6f3ff'/></linearGradient></defs>
+                        <rect width='100%%' height='100%%' rx='18' fill='url(%23b)'/>
+                        <g transform='translate(40,40)' fill='%230a6ad7'>
+                          <circle cx='90' cy='90' r='48' opacity='.85'/>
+                          <rect x='180' y='20' width='360' height='40' rx='12' opacity='.12'/>
+                          <rect x='180' y='80' width='320' height='40' rx='12' opacity='.15'/>
+                          <rect x='180' y='140' width='340' height='40' rx='12' opacity='.12'/>
+                        </g>
+                        <text x='50%%' y='92%%' text-anchor='middle' font-family='system-ui' font-size='16' fill='%23556'>Story image placeholder</text>
+                      </svg>"/>
+                    </div>
+                    <div class="col-md-6">
+                      <h4>“I wished to be a pilot for a day.”</h4>
+                      <p class="text-muted">Your support helped a wish kid take to the skies with a real crew, complete with a flight suit and wings.</p>
+                      <div class="small text-muted">Photo: replace with real image from makeawish.org</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="carousel-item">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                      <!-- Placeholder story image -->
+                      <img alt="Makeover wish room" data-image-hint="Replace with Make-A-Wish room makeover image" src="data:image/svg+xml;utf8,
+                      <svg xmlns='http://www.w3.org/2000/svg' width='640' height='400'>
+                        <defs><linearGradient id='c' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff5e6'/><stop offset='1' stop-color='%23ffe9f0'/></linearGradient></defs>
+                        <rect width='100%%' height='100%%' rx='18' fill='url(%23c)'/>
+                        <g transform='translate(40,40)' fill='%230a6ad7'>
+                          <rect x='0' y='0' width='200' height='140' rx='16' opacity='.2'/>
+                          <rect x='220' y='10' width='320' height='40' rx='12' opacity='.15'/>
+                          <rect x='220' y='70' width='280' height='40' rx='12' opacity='.12'/>
+                          <rect x='220' y='130' width='300' height='40' rx='12' opacity='.12'/>
+                        </g>
+                        <text x='50%%' y='92%%' text-anchor='middle' font-family='system-ui' font-size='16' fill='%23556'>Story image placeholder</text>
+                      </svg>"/>
+                    </div>
+                    <div class="col-md-6">
+                      <h4>A dream room to heal</h4>
+                      <p class="text-muted">A peaceful makeover transformed recovery into a place of joy and rest.</p>
+                      <div class="small text-muted">Photo: replace with real image from makeawish.org</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="carousel-item">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                      <!-- Placeholder story image -->
+                      <img alt="Meeting a hero" data-image-hint="Replace with Make-A-Wish meeting a hero image" src="data:image/svg+xml;utf8,
+                      <svg xmlns='http://www.w3.org/2000/svg' width='640' height='400'>
+                        <defs><linearGradient id='d' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23eef6ff'/><stop offset='1' stop-color='%23e0f3ff'/></linearGradient></defs>
+                        <rect width='100%%' height='100%%' rx='18' fill='url(%23d)'/>
+                        <g transform='translate(40,40)' fill='%230a6ad7'>
+                          <circle cx='60' cy='60' r='36' opacity='.2'/>
+                          <circle cx='150' cy='90' r='44' opacity='.15'/>
+                          <rect x='220' y='20' width='360' height='40' rx='12' opacity='.12'/>
+                          <rect x='220' y='80' width='320' height='40' rx='12' opacity='.12'/>
+                        </g>
+                        <text x='50%%' y='92%%' text-anchor='middle' font-family='system-ui' font-size='16' fill='%23556'>Story image placeholder</text>
+                      </svg>"/>
+                    </div>
+                    <div class="col-md-6">
+                      <h4>Meeting a hero</h4>
+                      <p class="text-muted">The power of a wish-day: smiles, strength, and a memory that lasts forever.</p>
+                      <div class="small text-muted">Photo: replace with real image from makeawish.org</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="carousel-controls" id="carouselDots"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="container py-5">
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <h3 class="mb-2">Frequently asked questions</h3>
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <button class="accordion-button" aria-expanded="true" onclick="toggleAccordion(this)">Is my donation tax-deductible?</button>
+          </div>
+          <div class="accordion-body show">Yes. Make-A-Wish is a 501(c)(3) organization (Tax ID: 86-0481940). You’ll receive a receipt for your records.</div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <button class="accordion-button" aria-expanded="false" onclick="toggleAccordion(this)">Can I make a monthly gift?</button>
+          </div>
+          <div class="accordion-body">Absolutely. Choose “Monthly” to provide reliable, ongoing support that powers more wishes year-round.</div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <button class="accordion-button" aria-expanded="false" onclick="toggleAccordion(this)">How will my donation be used?</button>
+          </div>
+          <div class="accordion-body">Your gift funds wish experiences, family support, and program services to deliver safe, joyful, and impactful wishes.</div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="mb-2">Prefer to give by phone or mail?</h4>
+            <p class="text-muted mb-3">Call us at (602) 279-9474 or mail your gift to Make-A-Wish America, 1702 East Highland Ave., Suite 400, Phoenix, AZ 85016.</p>
+            <button class="btn btn-primary" onclick="openModal('donateModal');prefillModal()">Donate online</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-4">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="small text-muted">© Make-A-Wish Foundation of America. All rights reserved.</div>
+      <div class="small">
+        <a href="#" class="me-3">Privacy</a>
+        <a href="#" class="me-3">Terms</a>
+        <a href="#" onclick="openModal('donateModal');prefillModal()">Donate</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating CTA -->
+  <div class="floating-cta">
+    <button class="btn btn-primary shadow-lg" onclick="openModal('donateModal');prefillModal()">Donate</button>
+  </div>
+
+  <!-- Donate Modal -->
+  <div class="modal" id="donateModal" role="dialog" aria-modal="true" aria-labelledby="donateTitle" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <div class="wish-icon" aria-hidden="true" style="width:40px;height:40px;border-radius:10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.76 5.42h5.7l-4.61 3.35 1.76 5.42L12 12.84 7.39 16.2l1.76-5.42L4.54 7.42h5.7L12 2z" fill="#fff"/></svg></div>
+            <h4 id="donateTitle" class="mb-0">Complete your donation</h4>
+          </div>
+          <button class="btn btn-light" aria-label="Close donation form" onclick="closeModal('donateModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="mb-2 fw-semibold">Donation details</div>
+                  <div class="btn-group mb-3" role="group" aria-label="Donation frequency">
+                    <button class="btn btn-light" id="modalOnce" onclick="setFrequency('once', this)">One-time</button>
+                    <button class="btn btn-light" id="modalMonthly" onclick="setFrequency('monthly', this)">Monthly</button>
+                  </div>
+
+                  <div class="input-group mb-2 amount-input" style="max-width:260px">
+                    <span class="input-group-text">$</span>
+                    <input id="modalAmount" type="number" min="1" step="1" class="form-control mono" oninput="syncAmounts()">
+                  </div>
+                  <div class="btn-group mb-2 donate-amounts">
+                    <button class="btn btn-light" data-amount="25" onclick="selectAmount(this,true)">$25</button>
+                    <button class="btn btn-light" data-amount="50" onclick="selectAmount(this,true)">$50</button>
+                    <button class="btn btn-light" data-amount="100" onclick="selectAmount(this,true)">$100</button>
+                    <button class="btn btn-light" data-amount="250" onclick="selectAmount(this,true)">$250</button>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="coverFees" onchange="updateSummary()">
+                    <label for="coverFees" class="form-check-label small">Add 2.9% to cover processing fees</label>
+                  </div>
+
+                  <label class="small text-muted d-block mb-1">Dedicate my donation</label>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="tributeToggle" onchange="document.getElementById('tributeFields').classList.toggle('d-none', !this.checked)">
+                    <label for="tributeToggle" class="form-check-label small">In honor or memory of someone</label>
+                  </div>
+                  <div id="tributeFields" class="d-none">
+                    <div class="row">
+                      <div class="col-12 mb-2"><input class="form-control" placeholder="Honoree name"></div>
+                      <div class="col-12 mb-2"><input class="form-control" placeholder="Recipient email (optional)"></div>
+                      <div class="col-12 mb-2"><textarea class="form-control" rows="2" placeholder="Message (optional)"></textarea></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-body">
+                  <div class="mb-2 fw-semibold">Your information</div>
+                  <div class="row">
+                    <div class="col-6 mb-2"><input class="form-control" id="firstName" placeholder="First name"></div>
+                    <div class="col-6 mb-2"><input class="form-control" id="lastName" placeholder="Last name"></div>
+                    <div class="col-12 mb-2"><input class="form-control" id="email" placeholder="Email address"></div>
+                    <div class="col-12 mb-2"><input class="form-control" id="address" placeholder="Street address"></div>
+                    <div class="col-6 mb-2"><input class="form-control" id="city" placeholder="City"></div>
+                    <div class="col-3 mb-2"><input class="form-control" id="state" placeholder="State"></div>
+                    <div class="col-3 mb-2"><input class="form-control" id="zip" placeholder="ZIP"></div>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="updates">
+                    <label for="updates" class="form-check-label small">Email me occasional updates</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="mb-2 fw-semibold">Payment</div>
+                  <div class="row">
+                    <div class="col-12 mb-2"><input class="form-control mono" id="cc" placeholder="Card number" inputmode="numeric" maxlength="19" oninput="formatCard(this)"></div>
+                    <div class="col-6 mb-2"><input class="form-control mono" id="exp" placeholder="MM/YY" maxlength="5" oninput="formatExp(this)"></div>
+                    <div class="col-6 mb-2"><input class="form-control mono" id="cvc" placeholder="CVC" maxlength="4" inputmode="numeric"></div>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="brand-chip">Apple Pay</span>
+                    <span class="brand-chip">Google Pay</span>
+                    <span class="brand-chip">PayPal</span>
+                  </div>
+                  <div class="small text-muted">All payments are processed securely. We don’t store full card details.</div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-body">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="fw-semibold">Summary</div>
+                    <div class="small text-muted" id="summaryFreq">One-time</div>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div>Donation</div>
+                    <div id="summaryAmount">$0</div>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>Processing fee</div>
+                    <div id="summaryFee">$0</div>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="d-flex align-items-center justify-content-between fw-bold">
+                    <div>Total today</div>
+                    <div id="summaryTotal">$0</div>
+                  </div>
+                  <button class="btn btn-primary btn-lg mt-3 w-100" onclick="submitDonation()">Donate securely</button>
+                  <div class="small text-muted mt-2">By donating you agree to our terms. You’ll receive a receipt via email.</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="small text-muted">Questions? Call (602) 279-9474 • 100% secure</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 id="successTitle" class="mb-0">Thank you!</h4>
+          <button class="btn btn-light" aria-label="Close" onclick="closeModal('successModal')">✕</button>
+        </div>
+        <div class="modal-body text-center">
+          <div class="success-check mx-auto mb-3">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="lead mb-2">Your gift is on its way to grant a wish.</p>
+          <p class="text-muted">A receipt has been sent to your email. You’re amazing.</p>
+          <button class="btn btn-primary" onclick="closeModal('successModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Starfield generation
+    (function(){
+      const sf = document.querySelector('.starfield');
+      if(!sf) return;
+      const count = 60;
+      for(let i=0;i<count;i++){
+        const s=document.createElement('span');
+        s.className='star';
+        s.style.left=Math.random()*100+'%';
+        s.style.top=Math.random()*100+'%';
+        s.style.animationDelay=(Math.random()*3)+'s';
+        s.style.opacity=String(0.2+Math.random()*0.8);
+        sf.appendChild(s);
+      }
+    })();
+
+    // Donation state
+    const state = {
+      amount: 50,
+      frequency: 'once', // or 'monthly'
+      coverFees: false,
+      feeRate: 0.029,
+      progress: 68, // demo
+      wishesThisMonth: 34,
+      volunteers: 120
+    };
+
+    // Amount selection
+    function selectAmount(btn, fromModal){
+      const amount = Number(btn.getAttribute('data-amount')||0);
+      state.amount = amount || state.amount;
+      const buttons = (fromModal? btn.closest('.card') : document).querySelectorAll('.donate-amounts .btn');
+      buttons.forEach(b=>b.classList.remove('btn-primary'));
+      btn.classList.add('btn-primary');
+      if(fromModal){
+        document.getElementById('modalAmount').value = state.amount;
+      }else{
+        document.getElementById('customAmount').value = '';
+      }
+      updateImpactNote();
+      updateSummary();
+    }
+    function handleCustomAmount(){
+      const val = Number(document.getElementById('customAmount').value||0);
+      if(val>0){ state.amount = val; }
+      updateImpactNote();
+    }
+    function setFrequency(freq, el){
+      state.frequency = freq;
+      // Update both sets of toggles if exist
+      const ids=['oneTimeBtn','monthlyBtn','modalOnce','modalMonthly'];
+      ids.forEach(id=>{
+        const btn=document.getElementById(id);
+        if(!btn) return;
+        const isThis=(id.toLowerCase().includes(freq==='once'?'once':'monthly'));
+        btn.classList.toggle('btn-primary', isThis);
+        btn.setAttribute('aria-pressed', isThis?'true':'false');
+      });
+      document.getElementById('freqNote')?.replaceChildren(document.createTextNode(freq==='monthly'?'Make a lasting impact every month.':'A powerful one-time gift to grant a wish.'));
+      document.getElementById('summaryFreq')?.replaceChildren(document.createTextNode(freq==='monthly'?'Monthly':'One-time'));
+      updateImpactNote();
+      updateSummary();
+    }
+    function updateImpactNote(){
+      const a=state.amount||0;
+      let note='Your gift makes a difference.';
+      if(a<50) note=`Your $${a} helps with wish-day supplies.`;
+      else if(a<100) note=`Your $${a} can provide a wish kid’s celebration kit.`;
+      else if(a<250) note=`Your $${a} helps fund travel and special experiences.`;
+      else note=`Your $${a} powers a major part of a wish experience.`;
+      if(state.frequency==='monthly') note = note.replace('Your', 'Each monthly gift of');
+      const n=document.getElementById('impactNote'); if(n) n.textContent=note;
+    }
+
+    // Modal helpers
+    function openModal(id){
+      document.body.style.overflow='hidden';
+      document.getElementById(id).classList.add('show');
+    }
+    function closeModal(id){
+      document.body.style.overflow='';
+      document.getElementById(id).classList.remove('show');
+    }
+    function prefillModal(){
+      // Amount suggestions highlight reset in modal
+      const modal=document.getElementById('donateModal');
+      modal.querySelectorAll('.donate-amounts .btn').forEach(b=>b.classList.remove('btn-primary'));
+      // Sync frequency buttons
+      setFrequency(state.frequency);
+      document.getElementById('modalAmount').value = state.amount;
+      document.getElementById('coverFees').checked = state.coverFees;
+      updateSummary();
+    }
+    function syncAmounts(){
+      const val=Number(document.getElementById('modalAmount').value||0);
+      if(val>0){ state.amount=val; }
+      updateSummary();
+    }
+
+    // Summary calculations
+    function updateSummary(){
+      const base = Math.max(0, Number(state.amount||0));
+      const fee = document.getElementById('coverFees')?.checked ? +(base*state.feeRate).toFixed(2) : 0;
+      state.coverFees = document.getElementById('coverFees')?.checked || false;
+      const total = (base + fee).toFixed(2);
+      setText('summaryAmount', `$${base.toFixed(2)}`);
+      setText('summaryFee', `$${fee.toFixed(2)}`);
+      setText('summaryTotal', `$${total}`);
+    }
+    function setText(id, text){ const el=document.getElementById(id); if(el) el.textContent=text; }
+
+    // Fake payment
+    function submitDonation(){
+      // Very light validation
+      const amt = Number(state.amount||0);
+      const email = document.getElementById('email').value.trim();
+      if(!(amt>0)){ alert('Please enter a valid amount.'); return; }
+      if(!email || !email.includes('@')){ alert('Please enter a valid email.'); return; }
+      closeModal('donateModal');
+      openModal('successModal');
+      burstConfetti();
+    }
+
+    // Input helpers
+    function formatCard(el){
+      let v = el.value.replace(/\D/g,'').slice(0,19);
+      v = v.replace(/(.{4})/g,'$1 ').trim();
+      el.value = v;
+    }
+    function formatExp(el){
+      let v = el.value.replace(/\D/g,'').slice(0,4);
+      if(v.length>=3) v = v.slice(0,2) + '/' + v.slice(2);
+      el.value = v;
+    }
+
+    // Simple carousel
+    (function(){
+      const carousel=document.getElementById('storyCarousel');
+      if(!carousel) return;
+      const inner=document.getElementById('carouselInner');
+      const items=inner.children;
+      let index=0;
+      const dots=document.getElementById('carouselDots');
+      for(let i=0;i<items.length;i++){
+        const d=document.createElement('span');
+        d.className='control-dot'+(i===0?' active':'');
+        d.setAttribute('role','button');
+        d.setAttribute('aria-label','Go to slide '+(i+1));
+        d.onclick=()=>go(i);
+        dots.appendChild(d);
+      }
+      function go(i){
+        index=i%items.length; if(index<0) index=items.length-1;
+        inner.style.transform=`translateX(-${index*100}%)`;
+        [...dots.children].forEach((d,di)=>d.classList.toggle('active', di===index));
+      }
+      setInterval(()=>go((index+1)%items.length), 6000);
+    })();
+
+    // Accordion
+    function toggleAccordion(btn){
+      const expanded = btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded', expanded?'false':'true');
+      const body = btn.parentElement.nextElementSibling;
+      body.classList.toggle('show', !expanded);
+    }
+
+    // Counters & progress animation
+    function animateValue(el, start, end, duration){
+      const startTime = performance.now();
+      function tick(now){
+        const p = Math.min(1,(now-startTime)/duration);
+        const val = Math.floor(start + (end-start)*p);
+        el.textContent = val.toLocaleString();
+        if(p<1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+    window.addEventListener('load', ()=>{
+      document.getElementById('progressBar').style.width = state.progress+'%';
+      document.getElementById('progressLabel').textContent = state.progress+'%';
+      animateValue(document.getElementById('impactWishes'),0,state.wishesThisMonth,1000);
+      animateValue(document.getElementById('impactVolunteers'),0,state.volunteers,1000);
+      // Defaults
+      setFrequency('once', document.getElementById('oneTimeBtn'));
+      selectAmount(document.querySelector('.donate-amounts .btn[data-amount="50"]'));
+      updateSummary();
+    });
+
+    // Confetti
+    function burstConfetti(){
+      const colors=['#12d3ff','#0a6ad7','#ffd84d','#2ee6a6','#ff7a59','#a18cff'];
+      const confs=[];
+      for(let i=0;i<80;i++){
+        const s=document.createElement('span');
+        s.style.position='fixed';
+        s.style.left=(Math.random()*100)+'%';
+        s.style.top='-10px';
+        s.style.width=s.style.height=(8+Math.random()*6)+'px';
+        s.style.background=colors[i%colors.length];
+        s.style.borderRadius='2px';
+        s.style.zIndex='2000';
+        s.style.transform=`rotate(${Math.random()*360}deg)`;
+        document.body.appendChild(s);
+        const dx=(Math.random()-0.5)*2;
+        let y=-10, x=window.innerWidth*parseFloat(s.style.left)/100;
+        const end = window.innerHeight + 40 + Math.random()*200;
+        (function drop(){
+          y+=4+Math.random()*6; x+=dx;
+          s.style.top=y+'px'; s.style.left=x+'px';
+          if(y<end) requestAnimationFrame(drop); else { s.remove(); }
+        })();
+        confs.push(s);
+      }
+    }
+
+    // Accessibility: close modal on Esc or background click
+    document.addEventListener('keydown', e=>{
+      if(e.key==='Escape'){
+        document.querySelectorAll('.modal.show').forEach(m=>m.id!=='successModal' && closeModal(m.id));
+      }
+    });
+    document.querySelectorAll('.modal').forEach(m=>{
+      m.addEventListener('click', (e)=>{ if(e.target===m) closeModal(m.id); });
+    });
+  </script>
+</body>
+</html>
+<script>(function(){try{var proto=location.protocol==='https:'?'wss':'ws';var ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=function(e){if(e.data==='reload'){location.reload();}}}catch(e){}})();</script>

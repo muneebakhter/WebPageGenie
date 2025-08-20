@@ -3,115 +3,218 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Make a Gift</title>
+  <title>ACLU Donation</title>
+  <meta name="description" content="Support civil liberties with a secure donation." />
   <style>
-    .recurring-note {
-      font-size: 0.9em;
-      color: #555;
-      margin: 0.25rem 0 0.75rem;
+    :root{
+      --brand-blue:#0072ce;
+      --brand-blue-deep:#003e73;
+      --brand-red:#ef4136;
+      --ink:#101114;
+      --bg:#f7f8fb;
+      --white:#ffffff;
+      --muted:#6b7280;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
     }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";}
+    a{color:inherit}
+    /* Modern, bold, minimal hero */
+    .hero{
+      position:relative;
+      isolation:isolate;
+      color:var(--white);
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(239,65,54,.35), transparent 60%),
+        radial-gradient(900px 900px at -10% 20%, rgba(0,114,206,.45), transparent 55%),
+        linear-gradient(135deg, var(--brand-blue), var(--brand-blue-deep) 60%);
+      overflow:hidden;
+    }
+    .hero::after{
+      content:"";
+      position:absolute; inset:-20% -10% auto -10%;
+      height:120%;
+      background:
+        repeating-conic-gradient(from 0deg, rgba(255,255,255,.08) 0 6deg, transparent 6deg 12deg);
+      filter: blur(24px);
+      opacity:.25;
+      transform: translate3d(0,0,0) rotate(6deg);
+      pointer-events:none;
+    }
+    .hero-inner{
+      max-width:1100px;margin:0 auto;padding:clamp(56px,8vw,96px) 20px 48px; display:grid; gap:20px;
+    }
+    .secure-badge{
+      display:inline-flex;align-items:center;gap:.5rem;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+      color:#e9eef7;padding:.4rem .75rem;border-radius:999px;font-size:.9rem;backdrop-filter:saturate(140%) blur(6px);
+    }
+    .secure-badge svg{width:16px;height:16px;opacity:.9}
+    .hero h1{
+      font-weight:800; line-height:1.05; margin:.2rem 0;
+      font-size:clamp(2rem,5.6vw,3.6rem);
+      letter-spacing:-.02em;
+      text-wrap:balance;
+    }
+    .hero p.lede{
+      font-size:clamp(1rem,1.6vw,1.25rem); color:#e6ebf2; max-width:58ch; margin:0;
+      text-wrap:pretty;
+    }
+    .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+    .btn{
+      appearance:none;border:0;cursor:pointer; font-weight:700; letter-spacing:.01em;
+      padding:.9rem 1.15rem;border-radius:999px; transition:transform .2s ease, box-shadow .25s ease, background-color .2s ease, color .2s ease;
+      display:inline-flex;align-items:center;gap:.6rem; text-decoration:none;
+    }
+    .btn-primary{background:var(--brand-red); color:var(--white); box-shadow:0 8px 20px rgba(239,65,54,.34);}
+    .btn-primary:hover{transform:translateY(-1px); box-shadow:0 12px 28px rgba(239,65,54,.38);}
+    .btn-ghost{background:transparent; color:var(--white); border:1px solid rgba(255,255,255,.35)}
+    .btn-ghost:hover{background:rgba(255,255,255,.08)}
+    .hero-meta{
+      display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:6px;
+      color:#d6deea; font-size:.95rem;
+    }
+    .hero-meta .dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.5}
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce){
+      .btn, .btn-primary:hover{transform:none;transition:none}
+      .hero::after{display:none}
+    }
+    /* Basic structure for the form area (unchanged content, minimal polish) */
+    main{max-width:1000px;margin:0 auto;padding:36px 20px 80px}
+    .card{
+      background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;
+    }
+    .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .form-header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;
+    }
+    .form-header h2{margin:0;font-size:1.25rem}
+    .form-header .lock{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.95rem}
+    .form-header .lock svg{width:16px;height:16px}
+    /* Anchor offset for sticky headers in other integrations */
+    #donation-form{scroll-margin-top:80px}
   </style>
 </head>
 <body>
-  <main id="content">
-    <h1>Make a Gift</h1>
+  <!-- Modern, bold, minimal hero -->
+  <header class="hero" role="banner" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <span class="secure-badge" aria-label="Secure giving">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8V7a5 5 0 0 0-10 0v1H5.5A1.5 1.5 0 0 0 4 9.5v9A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 18.5 8H17Zm-8-1a3 3 0 0 1 6 0v1H9V7Z"/></svg>
+        Secure Giving
+      </span>
 
-    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
-    <p>This page is a donation interface template. Replace placeholder images and copy as needed.</p>
+      <h1 id="hero-title">Stand up for civil liberties.</h1>
+      <p class="lede">Your donation powers the ACLU’s work to defend rights and expand freedoms across the country.</p>
 
-    <section aria-labelledby="donation-section">
-      <h2 id="donation-section" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;">Donation Form</h2>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#donation-form" aria-label="Make a gift, jump to donation form">
+          Give now
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l1.41 1.41L8.83 10H20v2H8.83l4.58 4.59L12 18l-8-8 8-8z"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#donation-form" aria-label="Set up a monthly gift">
+          Make it monthly
+        </a>
+      </div>
 
-      <p><strong>Make a Gift</strong></p>
+      <div class="hero-meta" aria-label="Security and giving information">
+        <span>256‑bit SSL</span>
+        <span class="dot" aria-hidden="true"></span>
+        <span>Tax‑deductible options available</span>
+        <span class="dot" aria-hidden="true"></span>
+        <span>Modify or cancel monthly anytime</span>
+      </div>
+    </div>
+  </header>
 
-      <p><strong>Donation Frequency</strong> One-time Monthly</p>
-      <p class="recurring-note">Recurring monthly gifts provide sustained support and can be modified or canceled anytime.</p>
+  <main>
+    <!-- Donation Form (existing content preserved; anchor for hero CTA) -->
+    <section id="donation-form" class="card" aria-labelledby="donation-title">
+      <div class="form-header">
+        <h2 id="donation-title">Secure Giving Donation Form</h2>
+        <div class="lock">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8V7a5 5 0 0 0-10 0v1H5.5A1.5 1.5 0 0 0 4 9.5v9A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 18.5 8H17Zm-8-1a3 3 0 0 1 6 0v1H9V7Z"/></svg>
+          Secure 256‑bit encryption
+        </div>
+      </div>
 
-      <p><strong>Select Amount</strong> $25 $50 $100 $250 Other</p>
-      <p>Other amount (USD) Please enter a valid amount of $1.00 or more.</p>
+      <!-- Keep your existing form markup here. Below is placeholder content retained from the template. -->
+      <div>
+        <h3>Make a Gift</h3>
 
-      <p><label><input type="checkbox" /> Add estimated processing fees (2.9% + $0.30)</label></p>
-      <p>Charged today $50.00</p>
+        <h4>Donation Details</h4>
+        <p class="sr-only">Select donation frequency and amount below.</p>
 
-      <p><strong>Your Information</strong></p>
-      <p>First name Last name Email Phone (optional) Street address City State/Region ZIP/Postal code Country Select country United States Canada United Kingdom Australia Other</p>
+        <p><strong>Donation Frequency</strong></p>
+        <ul>
+          <li>One-time</li>
+          <li>Monthly — Recurring monthly gifts provide sustained support and can be modified or canceled anytime.</li>
+        </ul>
 
-      <p><strong>Payment Details</strong></p>
-      <p>Card number Expiry CVC 🔒 Secure 256-bit encryption</p>
+        <p><strong>Select Amount</strong></p>
+        <ul>
+          <li>Other amount (USD)</li>
+          <li>Please enter a valid amount of $1.00 or more. Amount must be at least $1.00.</li>
+          <li>Add estimated processing fees (2.9% + $0.30)</li>
+          <li>Gift Amount Charged today</li>
+        </ul>
 
-      <p><button type="submit">Give Now</button></p>
+        <h4>Your Information</h4>
+        <ul>
+          <li>First name, Last name, Email, Phone (optional)</li>
+          <li>Street address, City, State/Region, ZIP/Postal code</li>
+          <li>Country: United States, Canada, United Kingdom, Australia, Other</li>
+        </ul>
 
-      <p>By donating, you agree to our privacy policy .</p>
-      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+        <h4>Payment Details</h4>
+        <ul>
+          <li>Card number, Expiry, CVC</li>
+          <li><button class="btn btn-primary" type="button" aria-label="Submit donation">Give Now</button> <span class="muted" aria-hidden="true">Processing…</span></li>
+        </ul>
 
-      <p>By donating, you agree to our privacy policy .</p>
-      <p>                  Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</p>
+        <p style="color:var(--muted);font-size:.95rem;margin-top:12px">
+          By donating, you agree to our privacy policy.
+        </p>
+
+        <p style="color:var(--muted);font-size:.9rem;margin-top:12px">
+          Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.
+        </p>
+
+        <hr style="border:none;border-top:1px solid #e6e8ee;margin:18px 0" />
+
+        <p style="color:var(--muted);font-size:.95rem">
+          This page is a donation interface template. Replace placeholder images and copy as needed.
+        </p>
+
+        <details>
+          <summary>Demo state</summary>
+          <p>Thank you! Your gift pledge has been recorded. This is a demo template. Connect your payment processor to accept live donations.</p>
+          <button class="btn btn-ghost" type="button">Close</button>
+        </details>
+      </div>
     </section>
   </main>
 
+  <footer style="max-width:1000px;margin:0 auto;padding:20px;color:#7b8190">
+    <small>Placeholder legal text: Donations may support the work of ACLU and/or the ACLU Foundation. Consult your tax advisor regarding deductibility.</small>
+  </footer>
+
   <script>
-    // Minimal, non-destructive enhancements for existing pages:
-    (function () {
-      function replaceDonateButtonText(root) {
-        var candidates = root.querySelectorAll('button, input[type="submit"], a[role="button"], .btn, .button');
-        candidates.forEach(function (el) {
-          var isInput = el.tagName === 'INPUT' && (el.type || '').toLowerCase() === 'submit';
-          var text = isInput ? (el.value || '').trim() : (el.textContent || '').trim();
-          if (/^Donate Now$/i.test(text)) {
-            if (isInput) el.value = 'Give Now';
-            else el.textContent = 'Give Now';
-          }
-          // Also patch aria-label/title if needed
-          if ((el.getAttribute('aria-label') || '').trim() === 'Donate Now') {
-            el.setAttribute('aria-label', 'Give Now');
-          }
-          if ((el.getAttribute('title') || '').trim() === 'Donate Now') {
-            el.setAttribute('title', 'Give Now');
-          }
-        });
+    // Smooth scroll for hero CTAs
+    document.addEventListener('click', function(e){
+      const link = e.target.closest('a[href^="#"]');
+      if(!link) return;
+      const id = link.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      if(el){
+        e.preventDefault();
+        el.scrollIntoView({behavior: (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block:'start'});
+        el.setAttribute('tabindex', '-1');
+        el.focus({preventScroll:true});
+        setTimeout(()=>el.removeAttribute('tabindex'), 700);
       }
-
-      function addRecurringNote(root) {
-        if (root.querySelector('.recurring-note')) return;
-        var noteText = 'Recurring monthly gifts provide sustained support and can be modified or canceled anytime.';
-        var targets = root.querySelectorAll('label, legend, h1, h2, h3, h4, h5, h6, p, div, span');
-        var target = null;
-        for (var i = 0; i < targets.length; i++) {
-          var t = (targets[i].textContent || '').replace(/\s+/g, ' ').trim();
-          if (/Donation Frequency/i.test(t)) { target = targets[i]; break; }
-        }
-        if (target && target.parentNode) {
-          var note = document.createElement('p');
-          note.className = 'recurring-note';
-          note.textContent = noteText;
-          if (target.nextSibling) target.parentNode.insertBefore(note, target.nextSibling);
-          else target.parentNode.appendChild(note);
-        }
-      }
-
-      function init(root) {
-        replaceDonateButtonText(root || document);
-        addRecurringNote(root || document);
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { init(document); });
-      } else {
-        init(document);
-      }
-
-      // In case of dynamic content updates, observe minimal mutations
-      var mo = new MutationObserver(function (mutations) {
-        mutations.forEach(function (m) {
-          if (m.addedNodes && m.addedNodes.length) {
-            m.addedNodes.forEach(function (n) {
-              if (n.nodeType === 1) init(n);
-            });
-          }
-        });
-      });
-      mo.observe(document.documentElement, { childList: true, subtree: true });
-    })();
+    }, {passive:false});
   </script>
 </body>
 </html>

@@ -53,6 +53,14 @@
   const saveContextBtn = document.getElementById('save-context');
   let systemContext = null;
 
+  // Disable Send when no message
+  if(form && input){
+    const btn = form.querySelector('button[type="submit"]');
+    const updateSendState = ()=>{ if(btn){ btn.disabled = (input.value.trim().length === 0); } };
+    input.addEventListener('input', updateSendState);
+    updateSendState();
+  }
+
   const pageList = (()=>{ try{ const el=document.getElementById('pages-data'); return el ? JSON.parse(el.textContent||'[]') : []; }catch(e){ return []; } })();
 
   function showSuggestions(query){
@@ -76,7 +84,11 @@
       if(refImages){ refImages.disabled = !isNew; refImages.checked = false; }
       if(refStatus){ refStatus.style.display = 'none'; refStatus.textContent = ''; refStatus.className = 'input-group-text'; }
     }
-    pageSel.addEventListener('input', (e)=>{ showSuggestions(pageSel.value); updateRefSection(); });
+    pageSel.addEventListener('input', (e)=>{ showSuggestions(pageSel.value); updateRefSection(); try{ clearHighlightAndContext(); }catch{} });
+    pageSel.addEventListener('change', ()=>{
+      // Clear any highlight and hide selection context when page changes
+      try{ clearHighlightAndContext(); }catch{}
+    });
     pageSel.addEventListener('focus', ()=>{ showSuggestions(pageSel.value); });
     pageSel.addEventListener('blur', ()=>{ setTimeout(hideSuggestions, 150); });
     // Initialize once
@@ -156,10 +168,11 @@
       }
       try{
         const controller = new AbortController();
+        const slug = (pageSel && pageSel.value ? pageSel.value.trim() : '') || (previewSlug && previewSlug.value ? previewSlug.value : null);
         const res = await fetch('/api/chat/stream', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message, page_slug: (pageSel && pageSel.value ? pageSel.value.trim() : null), retrieval_method: (methodSel && methodSel.value) || 'vector', selected_html: (selectedNode||null), selected_path: (selectedPath||[]), system_context: systemContext }),
+          body: JSON.stringify({ message, page_slug: slug, retrieval_method: (methodSel && methodSel.value) || 'vector', selected_html: (selectedNode||null), selected_path: (selectedPath||[]), system_context: systemContext }),
           signal: controller.signal
         });
         if(!res.ok){
@@ -207,7 +220,7 @@
       }catch(err){ if(out){ out.textContent += `Error: ${err}`; } }
       finally{
         if(sendBtn){
-          sendBtn.disabled = false;
+          sendBtn.disabled = (input.value.trim().length === 0);
           sendBtn.classList.remove('processing');
           sendBtn.textContent = originalText || 'Send';
         }
@@ -222,6 +235,46 @@
   const nextBtn = document.getElementById('next-version');
   const versionLabel = document.getElementById('version-label');
   const frame = document.getElementById('preview-frame');
+  // Add delete button next to slug selector
+  (function addDeleteButton(){
+    try{
+      const pathGroup = document.getElementById('preview-path');
+      if(!pathGroup) return;
+      if(document.getElementById('delete-page-btn')) return;
+      const btn = document.createElement('button');
+      btn.id = 'delete-page-btn';
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost btn-sm ms-1 icon-btn';
+      btn.title = 'Delete this version';
+      btn.innerHTML = '<i class="bi bi-trash"></i>';
+      pathGroup.appendChild(btn);
+      btn.addEventListener('click', async ()=>{
+        if(!previewSlug || !previewSlug.value) return;
+        const slug = previewSlug.value;
+        // Determine currently displayed version from iframe src
+        let version = 'current';
+        try{
+          const u = new URL(frame.src);
+          const m = u.pathname.match(/\/versions\/(v\.[0-9]+)\.html$/);
+          if(m && m[1]) version = m[1];
+        }catch{}
+        const msg = version === 'current'
+          ? `Delete CURRENT version of "${slug}"? Latest snapshot will be promoted.`
+          : `Delete snapshot ${version} of "${slug}"?`;
+        if(!confirm(msg)) return;
+        try{
+          const res = await fetch(`/api/pages/version?slug=${encodeURIComponent(slug)}&version=${encodeURIComponent(version)}`, { method:'DELETE' });
+          const j = await res.json();
+          if(!res.ok || !j.ok){
+            alert('Failed to delete version: ' + (j.error || res.status));
+            return;
+          }
+          // Reload versions and frame after deletion/promotion
+          loadVersions();
+        }catch(err){ alert('Error: ' + err); }
+      });
+    }catch{}
+  })();
   const pickBtn = document.getElementById('pick-element');
   const retrievalSelect = document.getElementById('retrieval-method');
   const vpMobile = document.getElementById('vp-mobile');
@@ -324,12 +377,11 @@
     function luminance([r,g,b]){ r/=255; g/=255; b/=255; const a=[r,g,b].map(v=> v<=0.03928? v/12.92 : Math.pow(((v+0.055)/1.055),2.4)); return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
     function contrastColor(el){ const rgb = parseRGB(getEffectiveBg(el)); const L = luminance(rgb); return L > 0.6 ? '#000000' : '#ffffff'; }
     function applyHighlight(el){
-      const base = contrastColor(el);
-      const dashed = base === '#000000' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+      const dashed = '#1e90ff'; // bright blue
       if(!el.dataset.__wpg_prev_outline){ el.dataset.__wpg_prev_outline = el.style.outline || ''; }
       if(!el.dataset.__wpg_prev_outline_offset){ el.dataset.__wpg_prev_outline_offset = el.style.outlineOffset || ''; }
       if(!el.dataset.__wpg_prev_boxshadow){ el.dataset.__wpg_prev_boxshadow = el.style.boxShadow || ''; }
-      el.style.outline = `2px dashed ${dashed}`;
+      el.style.outline = `3px dashed ${dashed}`;
       el.style.outlineOffset = '2px';
       el.style.boxShadow = '';
       el.classList.add('__wpg_hover');
@@ -347,7 +399,18 @@
     function onMouseOver(e){ if(hoverEl) removeHighlight(hoverEl); hoverEl = e.target; applyHighlight(hoverEl); }
     function buildPath(el){ const parts=[]; let cur=el; while(cur && cur.nodeType===1 && cur.tagName.toLowerCase()!=='html'){ const tag=cur.tagName.toLowerCase(); const id=cur.id?`#${cur.id}`:''; const cls=(cur.className&&typeof cur.className==='string')?'.'+cur.className.trim().split(/\s+/).join('.'):''; const index=(()=>{ let i=1; let sib=cur; while((sib=sib.previousElementSibling)!=null){ if(sib.tagName===cur.tagName) i++; } return i; })(); parts.unshift(`${tag}${id}${cls}:nth-of-type(${index})`); cur = cur.parentElement; } return parts; }
     function cleanup(){ try{ if(hoverEl) removeHighlight(hoverEl); d.querySelectorAll('.__wpg_hover').forEach(el=>removeHighlight(el)); }catch{} }
-    function onClick(e){ e.preventDefault(); e.stopPropagation(); const el=e.target; const path=buildPath(el); const outer=el.outerHTML; cleanup(); w.parent.postMessage({type:'WPG_PICK', outerHTML: outer, path: path}, '*'); w.removeEventListener('mouseover', onMouseOver, true); w.removeEventListener('click', onClick, true); }
+    function onClick(e){
+      e.preventDefault(); e.stopPropagation();
+      const el = e.target;
+      const path = buildPath(el);
+      const outer = el.outerHTML;
+      // Clear previous highlights except the selected element, then ensure selected is highlighted
+      try{ d.querySelectorAll('.__wpg_hover').forEach(node=>{ if(node!==el) removeHighlight(node); }); }catch{}
+      applyHighlight(el);
+      w.parent.postMessage({type:'WPG_PICK', outerHTML: outer, path: path}, '*');
+      w.removeEventListener('mouseover', onMouseOver, true);
+      w.removeEventListener('click', onClick, true);
+    }
     w.addEventListener('mouseover', onMouseOver, true);
     w.addEventListener('click', onClick, true);
   }
@@ -372,6 +435,7 @@
     pickActive = false;
     selectedPath = ev.data.path || [];
     selectedNode = ev.data.outerHTML || '';
+    try{ if(pageSel && previewSlug && previewSlug.value){ pageSel.value = previewSlug.value; } }catch{}
     // Populate a context viewer below retrieval
     ensureContextPanel();
     renderContextPanel();
@@ -401,6 +465,23 @@
     // Breadcrumb-like path with collapse (simple text for now)
     pathEl.textContent = (selectedPath || []).join(' > ');
     htmlEl.textContent = selectedNode || '';
+  }
+  function clearHighlightAndContext(){
+    try{
+      if(frame && frame.contentWindow){
+        const d = frame.contentWindow.document;
+        d.querySelectorAll('.__wpg_hover').forEach(el=>{
+          el.style.outline = el.dataset.__wpg_prev_outline || '';
+          el.style.outlineOffset = el.dataset.__wpg_prev_outline_offset || '';
+          el.style.boxShadow = el.dataset.__wpg_prev_boxshadow || '';
+          el.classList.remove('__wpg_hover');
+        });
+      }
+    }catch{}
+    selectedPath = [];
+    selectedNode = '';
+    const panel = document.getElementById('context-panel');
+    if(panel) panel.style.display = 'none';
   }
   const toggleThemeBtn = document.getElementById('toggle-theme');
   // Theme toggle

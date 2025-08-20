@@ -19,12 +19,14 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .db import init_db, SessionLocal, RunLog
+from .db import Document
 from .rag import build_graph, GraphState
 from .rag import _retrieve as rag_retrieve  # type: ignore
 from .rag import _generate as rag_generate  # type: ignore
 from .ws import ReloadWebSocketManager
-from .validate import validate_page_with_playwright
-from .validate import scrape_site_with_playwright
+from .validate import validate_page_with_playwright_async
+from .validate import scrape_site_with_playwright_async
+from .validate import consolidate_to_single_file, assert_single_file_no_external
 from .ingest import ingest_all_pages, ingest_single_page
 from .images import generate_image_file_async
 from datetime import datetime, timezone
@@ -65,6 +67,123 @@ async def log_requests(request, call_next):
         except Exception:
             status = '?'
         logger.info(f"HTTP END   {request.method} {request.url.path} status={status} dt_ms={dt:.1f}")
+
+
+@app.delete("/api/pages")
+async def delete_page_api(slug: str):
+    logger.info(f"DELETE page start slug={slug}")
+    # Remove directory pages/<slug>
+    try:
+        target_dir = PAGES_DIR / slug
+        existed = target_dir.exists()
+        if existed:
+            shutil.rmtree(target_dir, ignore_errors=True)
+    except Exception as e:
+        logger.exception("DELETE page: filesystem error")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+    # Remove DB rows
+    try:
+        with SessionLocal() as db:
+            try:
+                db.query(Document).filter(Document.slug == slug).delete(synchronize_session=False)
+            except Exception:
+                pass
+            try:
+                db.query(RunLog).filter(RunLog.page_slug == slug).delete(synchronize_session=False)
+            except Exception:
+                pass
+            db.commit()
+    except Exception as e:
+        logger.exception("DELETE page: db error")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+    logger.info(f"DELETE page done slug={slug}")
+    return JSONResponse({"ok": True, "slug": slug})
+
+
+@app.delete("/api/pages/version")
+async def delete_page_version(slug: str, version: str):
+    logger.info(f"DELETE version start slug={slug} version={version}")
+    target_dir = PAGES_DIR / slug
+    versions_dir = target_dir / "versions"
+    try:
+        if version == "current":
+            # Delete index.html and promote latest v.N to current
+            index_path = target_dir / "index.html"
+            if index_path.exists():
+                try:
+                    index_path.unlink()
+                except Exception:
+                    pass
+            # Find highest v.N
+            best_n = -1
+            best_path = None
+            for p in versions_dir.glob("v.*.html"):
+                m = re.match(r"^v\.(\d+)\.html$", p.name)
+                if not m:
+                    continue
+                try:
+                    n = int(m.group(1))
+                except Exception:
+                    continue
+                if n > best_n:
+                    best_n = n
+                    best_path = p
+            promoted_to = None
+            if best_path is not None:
+                # Move best version to index.html
+                content = best_path.read_text(encoding="utf-8")
+                (target_dir / "index.html").write_text(content, encoding="utf-8")
+                # Remove the version file and its diff if exists
+                try:
+                    best_path.unlink()
+                except Exception:
+                    pass
+                try:
+                    diff = versions_dir / f"v.{best_n}.diff.txt"
+                    diff.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                promoted_to = f"v.{best_n}"
+            else:
+                # No versions remain; clean folder if empty
+                try:
+                    if not any(target_dir.iterdir()):
+                        shutil.rmtree(target_dir, ignore_errors=True)
+                except Exception:
+                    pass
+            # Re-ingest current if present
+            try:
+                if (target_dir / "index.html").exists():
+                    ingest_single_page(target_dir / "index.html")
+            except Exception:
+                pass
+            logger.info(f"DELETE version done slug={slug} version=current promoted_to={promoted_to}")
+            return JSONResponse({"ok": True, "slug": slug, "deleted_version": "current", "promoted_to": promoted_to})
+        else:
+            # Delete a specific v.N
+            if not versions_dir.exists():
+                return JSONResponse(status_code=404, content={"error": "no versions folder"})
+            m = re.match(r"^v\.(\d+)$", version)
+            if not m:
+                return JSONResponse(status_code=400, content={"error": "version must be 'current' or v.N"})
+            html_path = versions_dir / f"{version}.html"
+            if not html_path.exists():
+                return JSONResponse(status_code=404, content={"error": "version file not found"})
+            try:
+                html_path.unlink()
+            except Exception:
+                pass
+            try:
+                (versions_dir / f"{version}.diff.txt").unlink(missing_ok=True)
+            except Exception:
+                pass
+            logger.info(f"DELETE version done slug={slug} version={version}")
+            return JSONResponse({"ok": True, "slug": slug, "deleted_version": version})
+    except Exception as e:
+        logger.exception("DELETE version error")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 class ChatRequest(BaseModel):
@@ -260,7 +379,7 @@ async def api_tool_image(req: ImageRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/api/tools/validate")
-def api_tool_validate(req: ValidateRequest):
+async def api_tool_validate(req: ValidateRequest):
     try:
         if req.url:
             url = req.url
@@ -269,46 +388,23 @@ def api_tool_validate(req: ValidateRequest):
             url = f"{base_url}/pages/{req.slug}/index.html"
         else:
             return JSONResponse(status_code=400, content={"error": "Provide slug or url"})
-        result = validate_page_with_playwright(url)
+        result = await validate_page_with_playwright_async(url)
         return JSONResponse({"url": url, **result})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/api/tools/example/scrape")
-def api_tool_example_scrape(req: ValidateRequest):
+async def api_tool_example_scrape(req: ValidateRequest):
     try:
         if not req.url:
             return JSONResponse(status_code=400, content={"error": "url required"})
-        data = scrape_site_with_playwright(req.url)
+        data = await scrape_site_with_playwright_async(req.url)
         return JSONResponse(data)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@app.post("/api/generate_logo")
-async def api_generate_logo(req: ImageRequest):
-    """Generate a site logo and save it under /static/logo.<ext>."""
-    try:
-        info = await generate_image_file_async(
-            prompt=req.prompt,
-            page_slug=None,
-            size=(req.size or "1024x1024"),
-            seed=req.seed,
-            debug=True,
-        )
-        src_path = Path(info.get("path") or "")
-        if not src_path.exists():
-            return JSONResponse(status_code=500, content={"error": "generation did not create a file"})
-        ext = src_path.suffix.lower() or ".png"
-        dest = STATIC_DIR / f"logo{ext}"
-        try:
-            dest.unlink(missing_ok=True)
-        except Exception:
-            pass
-        shutil.copyfile(src_path, dest)
-        return JSONResponse({"saved": True, "static_url": f"/static/logo{ext}", "path": str(dest), "provider": info.get("provider")})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+# Removed /api/generate_logo endpoint (superseded by /api/generate_image and /api/tools/image)
 
 
 
@@ -379,6 +475,17 @@ async def chat(req: ChatRequest):
 
 @app.post("/api/chat/stream")
 async def chat_stream(req: ChatRequest):
+    try:
+        import logging as _logging
+        _logging.getLogger("webpagegenie.chat").info(
+            "chat request received: page_slug=%s, retrieval=%s, selected_html_len=%s, selected_path_len=%s",
+            req.page_slug,
+            req.retrieval_method,
+            len(req.selected_html or ""),
+            len(req.selected_path or []) if isinstance(req.selected_path, list) else 0,
+        )
+    except Exception:
+        pass
     async def sse(event: str, data: str) -> str:
         return f"event: {event}\ndata: {data}\n\n"
 
@@ -390,6 +497,9 @@ async def chat_stream(req: ChatRequest):
             question=req.message,
             page_slug=req.page_slug,
             retrieval_method=(req.retrieval_method or "vector"),
+            selected_html=req.selected_html,
+            selected_path=(req.selected_path or []),
+            system_context=req.system_context,
         )
 
         yield await sse("started", json.dumps({"message": "received"}))
@@ -408,6 +518,19 @@ async def chat_stream(req: ChatRequest):
         try:
             state_after_generate = await to_thread(rag_generate, state_after_retrieve)  # type: ignore
             answer = state_after_generate.answer
+            # Sanitize: extract only the HTML document from the model response
+            try:
+                import re as _re
+                raw = answer or ""
+                m = _re.search(r"(<html[\s\S]*?</html>)", raw, _re.IGNORECASE)
+                if m:
+                    answer = m.group(1).strip()
+                else:
+                    m = _re.search(r"```html[\r\n]+([\s\S]*?)```", raw, _re.IGNORECASE)
+                    if m:
+                        answer = m.group(1).strip()
+            except Exception:
+                pass
             timings = state_after_generate.timings
         except Exception as e:
             yield await sse("error", json.dumps({"message": str(e)}))
@@ -434,12 +557,30 @@ async def chat_stream(req: ChatRequest):
                 attempt = 0
                 while attempt <= MAX_ATTEMPTS:
                     yield await sse("phase", json.dumps({"name": "validate"}))
-                    validation = validate_page_with_playwright(url)
+                    validation = await validate_page_with_playwright_async(url)
                     errs = (validation.get("console_errors") or []) + (validation.get("page_errors") or [])
                     yield await sse("validated", json.dumps({
                         "console_errors": validation.get("console_errors") or [],
                         "page_errors": validation.get("page_errors") or []
                     }))
+                    # Consolidate to single-file and fix images if needed
+                    try:
+                        fix = await consolidate_to_single_file(req.page_slug)
+                        if fix and fix.get("changed"):
+                            # Re-broadcast reload and re-ingest
+                            out_path = _save_version_and_write_current(req.page_slug, (Path(PAGES_DIR) / req.page_slug / "index.html").read_text(encoding="utf-8", errors="ignore"))
+                            try:
+                                ingest_single_page(out_path)
+                            except Exception:
+                                pass
+                            await ws_manager.broadcast_reload()
+                        # Enforce single-file: no external CSS/JS
+                        audit = await assert_single_file_no_external(req.page_slug)
+                        if not audit.get("ok"):
+                            errs += [f"external refs: {audit.get('externals')}"] if audit.get('externals') else []
+                            errs += [f"broken images: {audit.get('broken_images')}"] if audit.get('broken_images') else []
+                    except Exception:
+                        pass
                     if not errs:
                         break
                     # Ask generator to fix based on known client errors

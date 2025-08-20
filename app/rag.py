@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List
+import logging
+import json
 
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
@@ -74,8 +76,65 @@ def _retrieve(state: GraphState) -> GraphState:
 def _generate(state: GraphState) -> GraphState:
     import time
     t0 = time.perf_counter()
-    llm = ChatOpenAI(api_key=OPENAI_API_KEY, model=OPENAI_MODEL, temperature=0.15)
+    # Choose model dynamically: edits use gpt-4o-mini; first-time create uses gpt-5
+    try:
+        base_dir = os.getenv("PAGES_DIR", "pages")
+        slug_dir = os.path.join(base_dir, state.page_slug or "") if state.page_slug else None
+        is_existing_page = bool(slug_dir and os.path.exists(os.path.join(slug_dir, "index.html")))
+    except Exception:
+        is_existing_page = False
+    selected_model = "gpt-4o-mini" if is_existing_page else "gpt-5"
+    llm = ChatOpenAI(api_key=OPENAI_API_KEY, model=selected_model, temperature=1)
     context = "\n\n".join(d.page_content for d in state.retrieved)
+    # Fallback: if nothing retrieved but a page slug exists, load current page files from disk
+    if not context and state.page_slug:
+        try:
+            base_dir = os.getenv("PAGES_DIR", "pages")
+            slug_dir = os.path.join(base_dir, state.page_slug)
+            html_path = os.path.join(slug_dir, "index.html")
+            html_content = ""
+            if os.path.exists(html_path):
+                with open(html_path, "r", encoding="utf-8", errors="ignore") as f:
+                    html_content = f.read()
+            css_js_bundle: list[str] = []
+            # Naive parse for local CSS/JS references and inline their contents (best-effort)
+            try:
+                from bs4 import BeautifulSoup  # type: ignore
+                soup = BeautifulSoup(html_content, "html.parser")
+                links = soup.find_all("link", rel=lambda v: (v or "").lower() == "stylesheet")
+                for link in links:
+                    href = (link.get("href") or "").strip()
+                    if href and not href.startswith(("http://", "https://", "//")):
+                        p = os.path.normpath(os.path.join(slug_dir, href))
+                        if os.path.exists(p) and p.startswith(slug_dir):
+                            try:
+                                with open(p, "r", encoding="utf-8", errors="ignore") as cf:
+                                    css_js_bundle.append(f"/* {href} */\n" + cf.read())
+                            except Exception:
+                                pass
+                scripts = soup.find_all("script")
+                for s in scripts:
+                    src = (s.get("src") or "").strip()
+                    if src and not src.startswith(("http://", "https://", "//")):
+                        p = os.path.normpath(os.path.join(slug_dir, src))
+                        if os.path.exists(p) and p.startswith(slug_dir):
+                            try:
+                                with open(p, "r", encoding="utf-8", errors="ignore") as jf:
+                                    css_js_bundle.append(f"// {src}\n" + jf.read())
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+            assets = ("\n\n" + "\n\n".join(css_js_bundle)) if css_js_bundle else ""
+            context = (html_content or "") + assets
+            logging.getLogger("webpagegenie.context").info(
+                "Loaded page files for slug=%s: html=%s bytes, assets=%d items",
+                state.page_slug,
+                len(html_content or ""),
+                len(css_js_bundle),
+            )
+        except Exception:
+            pass
     # Edit-focused guidance: when a page_slug is set and the context likely contains the current HTML,
     # request minimal diffs and preserve structure/assets.
     default_context = (
@@ -110,11 +169,9 @@ def _generate(state: GraphState) -> GraphState:
             parts.append(selected_block)
             parts.append("\n\n")
         parts.append(
-            "Instructions:\n"
-            "- Make minimal edits to satisfy the task.\n"
-            "- Keep existing classes/IDs and asset references (images, CSS, JS) intact when possible.\n"
-            "- If you must add CSS/JS, inline small bits; otherwise reference relative files under ./ .\n"
-            "- Return a complete, valid HTML document."
+            "Output requirement:\n"
+            "- Return a complete, valid SINGLE-FILE HTML document. ALL CSS and JS must be inline within the HTML. One file only.\n"
+            "- Use Bootstrap 5 for styling (inline the CSS). You may inline visual libraries (Mermaid.js, Chart.js, icons/animations, etc.) to enhance visuals, but keep everything in this single HTML file."
         )
         user = "".join(parts)
     else:
@@ -134,6 +191,19 @@ def _generate(state: GraphState) -> GraphState:
         except Exception as e:
             state.answer = f"Image tool error: {e}"
             return state
+
+    # Log the exact request body that would be sent to OpenAI chat/completions
+    openai_payload = {
+        "model": selected_model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    logging.getLogger("webpagegenie.openai").info(
+        "OpenAI chat.completions request: %s",
+        json.dumps(openai_payload, ensure_ascii=False),
+    )
 
     msg = llm.invoke([
         SystemMessage(content=system),

@@ -1,0 +1,11 @@
+--- previous
++++ current
+@@ -239,7 +239,7 @@
+     <section class="hero" aria-labelledby="h1">
+       <div class="wrap">
+         <div>
+-          <h1 id="h1" class="title">Help protect animals in need. Your gift powers rescue, care, and adoption.</h1>
++          <h1 id="h1" class="title __wpg_hover" data-__wpg_prev_outline="" data-__wpg_prev_outline_offset="" data-__wpg_prev_boxshadow="" style="outline: rgba(0, 0, 0, 0.5) dashed 2px; outline-offset: 2px;">Monkeys need our help!</h1>
+           <p class="lede">Every contribution helps the ASPCA respond to cruelty, provide emergency medical care, and give vulnerable animals a second chance.</p>
+           <div class="chips" role="navigation" aria-label="Quick actions">
+             <a href="#donate" class="chip">Give Monthly</a>
