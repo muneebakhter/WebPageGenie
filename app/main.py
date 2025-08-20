@@ -193,6 +193,8 @@ class ChatRequest(BaseModel):
     selected_html: str | None = None
     selected_path: list[str] | None = None
     system_context: str | None = None
+    reference_url: str | None = None  # URL to scrape for new pages
+    extract_images: bool = False  # Extract images from reference site
 class ImageRequest(BaseModel):
     prompt: str
     page_slug: str | None = None
@@ -420,6 +422,9 @@ async def websocket_endpoint(ws: WebSocket):
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
+    # Determine if images should be generated based on the message content
+    needs_image_generation = any(keyword in req.message.lower() for keyword in ["image:", "generate image", "create image"])
+    
     state = GraphState(
         question=req.message,
         page_slug=req.page_slug,
@@ -427,6 +432,9 @@ async def chat(req: ChatRequest):
         selected_html=(req.selected_html or None),
         selected_path=(req.selected_path or []),
         system_context=(req.system_context or None),
+        reference_url=req.reference_url,
+        extract_images=req.extract_images,
+        needs_image_generation=needs_image_generation,
     )
     result = _langgraph_app.invoke(state)
     answer = result["answer"] if isinstance(result, dict) else result.answer
@@ -493,6 +501,9 @@ async def chat_stream(req: ChatRequest):
         import json
         from asyncio import to_thread
 
+        # Determine if images should be generated based on the message content
+        needs_image_generation = any(keyword in req.message.lower() for keyword in ["image:", "generate image", "create image"])
+
         state = GraphState(
             question=req.message,
             page_slug=req.page_slug,
@@ -500,24 +511,32 @@ async def chat_stream(req: ChatRequest):
             selected_html=req.selected_html,
             selected_path=(req.selected_path or []),
             system_context=req.system_context,
+            reference_url=req.reference_url,
+            extract_images=req.extract_images,
+            needs_image_generation=needs_image_generation,
         )
 
         yield await sse("started", json.dumps({"message": "received"}))
-        yield await sse("phase", json.dumps({"name": "embedding+retrieve"}))
+        
+        # Use the full LangGraph workflow instead of individual steps
         try:
-            state_after_retrieve = await to_thread(rag_retrieve, state)
-            yield await sse("retrieved", json.dumps({
-                "timings": state_after_retrieve.timings,
-                "num_chunks": len(state_after_retrieve.retrieved or []),
+            yield await sse("phase", json.dumps({"name": "running enhanced workflow"}))
+            final_state = await to_thread(_langgraph_app.invoke, state)
+            
+            # Extract results from final state
+            answer = final_state["answer"] if isinstance(final_state, dict) else final_state.answer
+            timings = final_state["timings"] if isinstance(final_state, dict) else getattr(final_state, "timings", {})
+            
+            yield await sse("completed", json.dumps({
+                "timings": timings,
+                "validation": getattr(final_state, "validation", None) if not isinstance(final_state, dict) else final_state.get("validation"),
+                "scraped_data_available": bool(getattr(final_state, "scraped_data", None) if not isinstance(final_state, dict) else final_state.get("scraped_data")),
+                "images_extracted": len(getattr(final_state, "extracted_images", []) if not isinstance(final_state, dict) else final_state.get("extracted_images", [])),
             }))
         except Exception as e:
             yield await sse("error", json.dumps({"message": str(e)}))
-            return
-
-        yield await sse("phase", json.dumps({"name": "generate"}))
-        try:
-            state_after_generate = await to_thread(rag_generate, state_after_retrieve)  # type: ignore
-            answer = state_after_generate.answer
+        # Handle HTML sanitization and saving
+        if answer and "<html" in answer:
             # Sanitize: extract only the HTML document from the model response
             try:
                 import re as _re
@@ -531,10 +550,6 @@ async def chat_stream(req: ChatRequest):
                         answer = m.group(1).strip()
             except Exception:
                 pass
-            timings = state_after_generate.timings
-        except Exception as e:
-            yield await sse("error", json.dumps({"message": str(e)}))
-            return
 
         saved = False
         if "<html" in (answer or "") and req.page_slug:
@@ -546,81 +561,29 @@ async def chat_stream(req: ChatRequest):
             await ws_manager.broadcast_reload()
             saved = True
 
-        # Validate in browser and optionally retry fixes
-        validation = None
-        try:
-            if req.page_slug:
-                import os as _os
-                base_url = _os.getenv("BASE_URL", "http://localhost:8000")
-                url = f"{base_url}/pages/{req.page_slug}/index.html"
-                MAX_ATTEMPTS = 2
-                attempt = 0
-                while attempt <= MAX_ATTEMPTS:
-                    yield await sse("phase", json.dumps({"name": "validate"}))
-                    validation = await validate_page_with_playwright_async(url)
-                    errs = (validation.get("console_errors") or []) + (validation.get("page_errors") or [])
-                    yield await sse("validated", json.dumps({
-                        "console_errors": validation.get("console_errors") or [],
-                        "page_errors": validation.get("page_errors") or []
-                    }))
-                    # Consolidate to single-file and fix images if needed
-                    try:
-                        fix = await consolidate_to_single_file(req.page_slug)
-                        if fix and fix.get("changed"):
-                            # Re-broadcast reload and re-ingest
-                            out_path = _save_version_and_write_current(req.page_slug, (Path(PAGES_DIR) / req.page_slug / "index.html").read_text(encoding="utf-8", errors="ignore"))
-                            try:
-                                ingest_single_page(out_path)
-                            except Exception:
-                                pass
-                            await ws_manager.broadcast_reload()
-                        # Enforce single-file: no external CSS/JS
-                        audit = await assert_single_file_no_external(req.page_slug)
-                        if not audit.get("ok"):
-                            errs += [f"external refs: {audit.get('externals')}"] if audit.get('externals') else []
-                            errs += [f"broken images: {audit.get('broken_images')}"] if audit.get('broken_images') else []
-                    except Exception:
-                        pass
-                    if not errs:
-                        break
-                    # Ask generator to fix based on known client errors
-                    attempt += 1
-                    if attempt > MAX_ATTEMPTS:
-                        break
-                    try:
-                        state_after_generate.validation = validation  # type: ignore
-                    except Exception:
-                        pass
-                    yield await sse("phase", json.dumps({"name": "generate_fix"}))
-                    state_after_generate = await to_thread(rag_generate, state_after_generate)  # type: ignore
-                    answer = state_after_generate.answer
-                    if "<html" in (answer or "") and req.page_slug:
-                        out_path = _save_version_and_write_current(req.page_slug, answer or "")
-                        try:
-                            ingest_single_page(out_path)
-                        except Exception:
-                            pass
-                        await ws_manager.broadcast_reload()
-                        saved = True
-        except Exception:
-            pass
-
+        # Prepare final payload
         payload = {
             "saved": saved,
             "answer": answer,
             "timings": timings,
-            "retrieval_method": state.retrieval_method,
+            "retrieval_method": (getattr(final_state, "retrieval_method", None) if not isinstance(final_state, dict) else final_state.get("retrieval_method")) or "vector",
         }
+        
+        # Include validation summary if present
         try:
-            # Include validation summary if present
-            val = validation or getattr(state_after_generate, "validation", None)
-            if val:
+            validation = getattr(final_state, "validation", None) if not isinstance(final_state, dict) else final_state.get("validation")
+            if validation:
                 payload["validation"] = {
-                    "console_errors": (val.get("console_errors") or [])[:10],
-                    "page_errors": (val.get("page_errors") or [])[:10],
+                    "console_errors": (validation.get("console_errors") or [])[:10],
+                    "page_errors": (validation.get("page_errors") or [])[:10],
+                    "single_page_issues": (validation.get("single_page_issues") or [])[:5],
+                    "syntax_issues": (validation.get("syntax_issues") or [])[:5],
+                    "external_resource_issues": (validation.get("external_resource_issues") or [])[:5],
+                    "ok": validation.get("ok", False),
                 }
         except Exception:
             pass
+            
         yield await sse("done", json.dumps(payload))
 
     from starlette.responses import StreamingResponse
