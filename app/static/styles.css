@@ -24,6 +24,9 @@ body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;p
 header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)}
 header .brand{display:flex;align-items:center;gap:10px;margin-right:16px}
 header .logo{width:28px;height:28px;opacity:.9}
+/* Invert logo in dark mode since it's black */
+header .logo{filter:invert(1)}
+body.light header .logo{filter:invert(0)}
 header h1{font-size:18px;margin:0;color:var(--fg)}
 header a{color:var(--link);margin-right:10px;text-decoration:none;padding:6px 10px;border-radius:6px}
 header a:hover{background:var(--hover)}
