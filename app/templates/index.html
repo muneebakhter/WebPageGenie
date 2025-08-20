@@ -5,45 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WebPageGenie</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <header>
     <div class="brand">
-      <button id="toggle-sidebar" class="btn btn-outline-light btn-sm me-2" type="button" aria-pressed="false" aria-label="Toggle left sidebar">&lt;</button>
+      <button id="toggle-sidebar" class="btn btn-ghost btn-sm me-2 icon-btn" type="button" aria-pressed="false" aria-label="Toggle left sidebar"><i class="bi bi-chevron-left"></i></button>
       <img src="/static/logo.svg" alt="Web Page Genie" class="logo" onerror="this.style.display='none'" />
       <h1>Web Page Genie</h1>
     </div>
     <nav class="d-flex align-items-center gap-2 flex-nowrap header-tools">
       <div class="input-group input-group-sm" id="preview-path">
-        <span class="input-group-text bg-transparent text-white border-white-50">Preview</span>
-        <span class="input-group-text bg-transparent text-white border-white-50">/pages/</span>
-        <select id="preview-slug" class="form-select form-select-sm bg-transparent text-white" style="border-color: rgba(255,255,255,0.5);">
+        <span class="input-group-text bg-transparent">Preview</span>
+        <span class="input-group-text bg-transparent">/pages/</span>
+        <select id="preview-slug" class="form-select form-select-sm">
           {% for p in pages %}
           <option value="{{ p }}">{{ p }}</option>
           {% endfor %}
         </select>
-        <span class="input-group-text bg-transparent text-white border-white-50">/index.html</span>
+        <span class="input-group-text bg-transparent">/index.html</span>
       </div>
       <div class="btn-group ms-2" role="group" aria-label="Version navigation">
         <button id="prev-version" class="btn btn-success btn-sm" type="button" title="Older version">← Prev</button>
         <button id="next-version" class="btn btn-success btn-sm" type="button" title="Newer version">Next →</button>
       </div>
-      <span id="version-label" class="text-white-75 small ms-2"></span>
+      <span id="version-label" class="small ms-2"></span>
       <div class="btn-group ms-2" role="group" aria-label="Viewport size">
-        <button id="vp-mobile" class="btn btn-outline-light btn-sm" type="button" title="Mobile">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" ry="2" stroke="none"/><circle cx="12" cy="19" r="1.5" fill="#0b1220"/></svg>
-        </button>
-        <button id="vp-tablet" class="btn btn-outline-light btn-sm" type="button" title="Tablet">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" ry="2" stroke="none"/><circle cx="20" cy="12" r="1.3" fill="#0b1220"/></svg>
-        </button>
-        <button id="vp-desktop" class="btn btn-outline-light btn-sm" type="button" title="Desktop">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="none"/><rect x="8" y="18" width="8" height="2" stroke="none"/></svg>
-        </button>
+        <button id="vp-mobile" class="btn btn-ghost btn-sm icon-btn" type="button" title="Mobile"><i class="bi bi-phone"></i></button>
+        <button id="vp-tablet" class="btn btn-ghost btn-sm icon-btn" type="button" title="Tablet"><i class="bi bi-tablet"></i></button>
+        <button id="vp-desktop" class="btn btn-ghost btn-sm icon-btn" type="button" title="Desktop"><i class="bi bi-pc-display"></i></button>
       </div>
-      <button id="edit-context" class="btn btn-outline-light btn-sm ms-2" type="button" title="Edit system context" data-bs-toggle="modal" data-bs-target="#contextModal">Edit Context</button>
-      <button id="pick-element" class="btn btn-outline-light btn-sm ms-2" type="button" title="Pick element in preview">Pick Element</button>
-      <button id="toggle-right" class="btn btn-outline-light btn-sm ms-auto" type="button" aria-pressed="false" aria-label="Toggle LangGraph sidebar">&gt;</button>
+      <button id="edit-context" class="btn btn-ghost btn-sm ms-2" type="button" title="Edit system context" data-bs-toggle="modal" data-bs-target="#contextModal">Edit Context</button>
+      <button id="pick-element" class="btn btn-ghost btn-sm ms-2" type="button" title="Pick element in preview">Pick Element</button>
+      <button id="toggle-theme" class="btn btn-ghost btn-sm ms-2 icon-btn" type="button" title="Toggle dark/light"><i class="bi bi-moon"></i></button>
+      <button id="toggle-right" class="btn btn-ghost btn-sm ms-auto icon-btn" type="button" aria-pressed="false" aria-label="Toggle LangGraph sidebar"><i class="bi bi-chevron-right"></i></button>
     </nav>
   </header>
 
@@ -52,34 +48,21 @@
       <!-- Pinned collapsible sidebar -->
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-inner">
-          <div class="card bg-transparent border-0">
-            <div class="card-body">
-              <h5 class="card-title text-white mb-3">Pages</h5>
-              <ul class="page-list text-white">
-                {% for p in pages %}
-                <li><a href="/pages/{{ p }}/index.html" target="_blank" rel="noopener">{{ p }}</a></li>
-                {% endfor %}
-              </ul>
-            </div>
-          </div>
+          
 
           <div class="card bg-transparent border-0 chat">
             <div class="card-body">
-              <h5 class="card-title text-white">Ask WebPageGenie</h5>
+              <h5 class="card-title">Ask WebPageGenie</h5>
               <form id="chat-form" class="controls">
-                <input type="text" id="chat-input" class="form-control" placeholder="Ask to create or edit a page..." />
+                <textarea id="chat-input" class="form-control" rows="5" placeholder="Ask to create or edit a page..."></textarea>
                 <div class="row mt-2">
-                  <div class="col-6">
-                    <label class="form-label text-white mb-1"><span>Page</span></label>
-                    <select id="page-select" class="form-select">
-                      <option value="">+New Page</option>
-                      {% for p in pages %}
-                      <option value="{{ p }}">{{ p }}</option>
-                      {% endfor %}
-                    </select>
+                  <div class="col-12 position-relative">
+                    <label class="form-label mb-1"><span>Page</span></label>
+                    <input id="page-select" class="form-control" placeholder="Type to select or create…" autocomplete="off" />
+                    <div id="page-suggestions" class="dropdown-menu w-100" style="display:none; max-height:180px; overflow:auto"></div>
                   </div>
-                  <div class="col-6">
-                    <label class="form-label text-white mb-1"><span>Retrieval</span></label>
+                  <div class="col-12 mt-2">
+                    <label class="form-label mb-1"><span>Retrieval</span></label>
                     <select id="retrieval-method" class="form-select">
                       <option value="vector" selected>Vector</option>
                       <option value="hybrid">Hybrid</option>
@@ -90,10 +73,9 @@
                   <button type="submit" class="btn btn-success">Send</button>
                 </div>
               </form>
-              <pre id="chat-output" class="mt-2"></pre>
             </div>
           </div>
-          <div class="mt-auto pt-2 d-grid text-center text-white-50 small">Sidebar</div>
+          <div class="mt-auto pt-2 d-grid text-center small sidebar-footer">Sidebar</div>
         </div>
       </aside>
 
@@ -140,7 +122,26 @@
     </div>
   </div>
 
+  <!-- Output Modal -->
+  <div class="modal fade" id="outputModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background:var(--bg); color:var(--fg);">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Processing</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <pre id="chat-output" class="mt-0" style="background:var(--inputBg); color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:60vh; overflow:auto;"></pre>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script id="pages-data" type="application/json">{{ pages | tojson }}</script>
   <script src="/static/client.js"></script>
 </body>
 </html>

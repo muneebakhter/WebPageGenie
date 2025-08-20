@@ -7,7 +7,8 @@
   if(toggleBtn && sidebar){
     const updateIcon = ()=>{
       const isCollapsed = sidebar.classList.contains('collapsed');
-      toggleBtn.textContent = isCollapsed ? '>' : '<';
+      const icon = toggleBtn.querySelector('i');
+      if(icon){ icon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left'; }
       toggleBtn.setAttribute('aria-pressed', isCollapsed ? 'true' : 'false');
     };
     toggleBtn.addEventListener('click', ()=>{
@@ -22,7 +23,10 @@
     if(!rightBar) return;
     if(open) rightBar.classList.remove('collapsed'); else rightBar.classList.add('collapsed');
     if(toggleRight) toggleRight.setAttribute('aria-pressed', open ? 'true' : 'false');
-    if(toggleRight) toggleRight.textContent = open ? '<' : '>';
+    if(toggleRight){
+      const icon = toggleRight.querySelector('i');
+      if(icon){ icon.className = open ? 'bi bi-chevron-left' : 'bi bi-chevron-right'; }
+    }
   }
   if(toggleRight){
     toggleRight.addEventListener('click', ()=>{
@@ -34,20 +38,52 @@
   const form = document.getElementById('chat-form');
   const input = document.getElementById('chat-input');
   const pageSel = document.getElementById('page-select');
+  const pageDD = document.getElementById('page-suggestions');
   const methodSel = document.getElementById('retrieval-method');
   const out = document.getElementById('chat-output');
+  let outputModal = null;
+  let bootstrapModal = null;
   const editContextBtn = document.getElementById('edit-context');
   const contextTextarea = document.getElementById('context-text');
   const saveContextBtn = document.getElementById('save-context');
   let systemContext = null;
+
+  const pageList = (()=>{ try{ const el=document.getElementById('pages-data'); return el ? JSON.parse(el.textContent||'[]') : []; }catch(e){ return []; } })();
+
+  function showSuggestions(query){
+    if(!pageDD) return;
+    const q = (query||'').toLowerCase();
+    const matches = pageList.filter(p => p.toLowerCase().includes(q)).slice(0, 8);
+    const items = matches.map(p => `<button type="button" class="dropdown-item" data-value="${p}">${p}</button>`).join('');
+    pageDD.innerHTML = items || `<div class="dropdown-item disabled">No matches — will create “${query || ''}”</div>`;
+    pageDD.style.display = 'block';
+  }
+  function hideSuggestions(){ if(pageDD) pageDD.style.display='none'; }
+
+  if(pageSel){
+    pageSel.addEventListener('input', (e)=>{ showSuggestions(pageSel.value); });
+    pageSel.addEventListener('focus', ()=>{ showSuggestions(pageSel.value); });
+    pageSel.addEventListener('blur', ()=>{ setTimeout(hideSuggestions, 150); });
+  }
+  if(pageDD){
+    pageDD.addEventListener('click', (e)=>{
+      const t = e.target; if(!(t instanceof Element)) return;
+      const val = t.getAttribute('data-value');
+      if(val && pageSel){ pageSel.value = val; hideSuggestions(); }
+    });
+  }
 
   if(form){
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const message = input.value.trim();
       if(!message) return;
-      out.textContent += `\n> ${message}\n`;
-      out.textContent += `… sending to server, please wait …\n`;
+      if(out){ out.textContent = `> ${message}\n… sending to server, please wait …\n`; }
+      try{
+        const el = document.getElementById('outputModal');
+        if(el && window.bootstrap){ bootstrapModal = new window.bootstrap.Modal(el); bootstrapModal.show(); }
+        else if(el){ el.style.display = 'block'; }
+      }catch{}
       input.value = '';
       const sendBtn = form.querySelector('button[type="submit"]');
       const originalText = sendBtn ? sendBtn.textContent : '';
@@ -61,12 +97,12 @@
         const res = await fetch('/api/chat/stream', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message, page_slug: pageSel.value || null, retrieval_method: (methodSel && methodSel.value) || 'vector', selected_html: (selectedNode||null), selected_path: (selectedPath||[]), system_context: systemContext }),
+          body: JSON.stringify({ message, page_slug: (pageSel && pageSel.value ? pageSel.value.trim() : null), retrieval_method: (methodSel && methodSel.value) || 'vector', selected_html: (selectedNode||null), selected_path: (selectedPath||[]), system_context: systemContext }),
           signal: controller.signal
         });
         if(!res.ok){
           const text = await res.text();
-          out.textContent += `Error: HTTP ${res.status} - ${text}\n`;
+          if(out){ out.textContent += `Error: HTTP ${res.status} - ${text}\n`; }
           return;
         }
 
@@ -89,30 +125,31 @@
               if(line.startsWith('data:')) data += line.slice(5).trim();
             }
             if(event === 'started'){
-              out.textContent += `… request received …\n`;
+              if(out){ out.textContent += `… request received …\n`; }
             } else if(event === 'phase'){
-              try{ const j = JSON.parse(data); out.textContent += `… ${j.name} …\n`; }catch{}
+              try{ const j = JSON.parse(data); if(out){ out.textContent += `… ${j.name} …\n`; } }catch{}
             } else if(event === 'retrieved'){
-              try{ const j = JSON.parse(data); out.textContent += `retrieved ${j.num_chunks} chunks in ${Math.round((j.timings||{}).retrieve_ms||0)}ms\n`; }catch{}
+              try{ const j = JSON.parse(data); if(out){ out.textContent += `retrieved ${j.num_chunks} chunks in ${Math.round((j.timings||{}).retrieve_ms||0)}ms\n`; } }catch{}
             } else if(event === 'error'){
-              try{ const j = JSON.parse(data); out.textContent += `Error: ${j.message}\n`; }catch{ out.textContent += `Error\n`; }
+              try{ const j = JSON.parse(data); if(out){ out.textContent += `Error: ${j.message}\n`; } }catch{ if(out){ out.textContent += `Error\n`; } }
             } else if(event === 'done'){
               try{
                 const j = JSON.parse(data);
-                if(j.saved) out.textContent += `Saved page and triggered reload.\n`;
+                if(out && j.saved) out.textContent += `Saved page and triggered reload.\n`;
                 const timing = j.timings ? `\n[retrieval=${j.retrieval_method}] timings: ${JSON.stringify(j.timings)}` : '';
-                out.textContent += (j.answer || "(no answer)") + timing + "\n";
+                if(out){ out.textContent += (j.answer || "(no answer)") + timing + "\n"; }
               }catch{}
             }
           }
         }
-      }catch(err){ out.textContent += `Error: ${err}`; }
+      }catch(err){ if(out){ out.textContent += `Error: ${err}`; } }
       finally{
         if(sendBtn){
           sendBtn.disabled = false;
           sendBtn.classList.remove('processing');
           sendBtn.textContent = originalText || 'Send';
         }
+        try{ if(bootstrapModal){ bootstrapModal.handleUpdate(); } }catch{}
       }
     });
   }
@@ -174,6 +211,7 @@
     previewSlug.addEventListener('change', loadVersions);
     loadVersions();
   }
+  // (Reverted enhanced select/toast)
   if(prevBtn){
     prevBtn.addEventListener('click', ()=>{
       if(!versions.length) return;
@@ -205,14 +243,48 @@
     const w = frame.contentWindow; const d = w.document;
     const styleId = '__wpg_picker_style__';
     if(!d.getElementById(styleId)){
-      const st = d.createElement('style'); st.id = styleId; st.textContent = `.__wpg_hover{outline: 2px dashed #22c55e !important; outline-offset: 2px !important}`; d.head.appendChild(st);
+      const st = d.createElement('style'); st.id = styleId; st.textContent = `/* reserved */`; d.head.appendChild(st);
     }
     // Clear any prior highlights from previous pick sessions
     try{ d.querySelectorAll('.__wpg_hover').forEach(el=>el.classList.remove('__wpg_hover')); }catch{}
     let hoverEl = null;
-    function onMouseOver(e){ if(hoverEl) hoverEl.classList.remove('__wpg_hover'); hoverEl = e.target; hoverEl.classList.add('__wpg_hover'); }
+    function getEffectiveBg(el){
+      let cur = el;
+      while(cur && cur !== d.documentElement){
+        const cs = w.getComputedStyle(cur);
+        const bg = cs.backgroundColor;
+        if(bg && !/rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/.test(bg) && bg !== 'transparent') return bg;
+        cur = cur.parentElement;
+      }
+      return 'rgb(255,255,255)';
+    }
+    function parseRGB(str){ const m = str.match(/rgba?\(([^)]+)\)/); if(!m) return [255,255,255]; const parts = m[1].split(',').map(s=>parseFloat(s.trim())); return parts.slice(0,3); }
+    function luminance([r,g,b]){ r/=255; g/=255; b/=255; const a=[r,g,b].map(v=> v<=0.03928? v/12.92 : Math.pow(((v+0.055)/1.055),2.4)); return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+    function contrastColor(el){ const rgb = parseRGB(getEffectiveBg(el)); const L = luminance(rgb); return L > 0.6 ? '#000000' : '#ffffff'; }
+    function applyHighlight(el){
+      const base = contrastColor(el);
+      const dashed = base === '#000000' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+      if(!el.dataset.__wpg_prev_outline){ el.dataset.__wpg_prev_outline = el.style.outline || ''; }
+      if(!el.dataset.__wpg_prev_outline_offset){ el.dataset.__wpg_prev_outline_offset = el.style.outlineOffset || ''; }
+      if(!el.dataset.__wpg_prev_boxshadow){ el.dataset.__wpg_prev_boxshadow = el.style.boxShadow || ''; }
+      el.style.outline = `2px dashed ${dashed}`;
+      el.style.outlineOffset = '2px';
+      el.style.boxShadow = '';
+      el.classList.add('__wpg_hover');
+    }
+    function removeHighlight(el){
+      if(!el) return;
+      el.style.outline = el.dataset.__wpg_prev_outline || '';
+      el.style.outlineOffset = el.dataset.__wpg_prev_outline_offset || '';
+      el.style.boxShadow = el.dataset.__wpg_prev_boxshadow || '';
+      delete el.dataset.__wpg_prev_outline;
+      delete el.dataset.__wpg_prev_outline_offset;
+      delete el.dataset.__wpg_prev_boxshadow;
+      el.classList.remove('__wpg_hover');
+    }
+    function onMouseOver(e){ if(hoverEl) removeHighlight(hoverEl); hoverEl = e.target; applyHighlight(hoverEl); }
     function buildPath(el){ const parts=[]; let cur=el; while(cur && cur.nodeType===1 && cur.tagName.toLowerCase()!=='html'){ const tag=cur.tagName.toLowerCase(); const id=cur.id?`#${cur.id}`:''; const cls=(cur.className&&typeof cur.className==='string')?'.'+cur.className.trim().split(/\s+/).join('.'):''; const index=(()=>{ let i=1; let sib=cur; while((sib=sib.previousElementSibling)!=null){ if(sib.tagName===cur.tagName) i++; } return i; })(); parts.unshift(`${tag}${id}${cls}:nth-of-type(${index})`); cur = cur.parentElement; } return parts; }
-    function cleanup(){ try{ if(hoverEl) hoverEl.classList.remove('__wpg_hover'); d.querySelectorAll('.__wpg_hover').forEach(el=>el.classList.remove('__wpg_hover')); }catch{} }
+    function cleanup(){ try{ if(hoverEl) removeHighlight(hoverEl); d.querySelectorAll('.__wpg_hover').forEach(el=>removeHighlight(el)); }catch{} }
     function onClick(e){ e.preventDefault(); e.stopPropagation(); const el=e.target; const path=buildPath(el); const outer=el.outerHTML; cleanup(); w.parent.postMessage({type:'WPG_PICK', outerHTML: outer, path: path}, '*'); w.removeEventListener('mouseover', onMouseOver, true); w.removeEventListener('click', onClick, true); }
     w.addEventListener('mouseover', onMouseOver, true);
     w.addEventListener('click', onClick, true);
@@ -267,6 +339,23 @@
     // Breadcrumb-like path with collapse (simple text for now)
     pathEl.textContent = (selectedPath || []).join(' > ');
     htmlEl.textContent = selectedNode || '';
+  }
+  const toggleThemeBtn = document.getElementById('toggle-theme');
+  // Theme toggle
+  function updateThemeIcon(){
+    if(!toggleThemeBtn) return;
+    const icon = toggleThemeBtn.querySelector('i');
+    const isLight = document.body.classList.contains('light');
+    if(icon){ icon.className = isLight ? 'bi bi-sun' : 'bi bi-moon'; }
+  }
+  if(toggleThemeBtn){
+    toggleThemeBtn.addEventListener('click', ()=>{
+      document.body.classList.toggle('light');
+      updateThemeIcon();
+      try{ localStorage.setItem('wpg_theme', document.body.classList.contains('light') ? 'light' : 'dark'); }catch(e){}
+    });
+    try{ const pref = localStorage.getItem('wpg_theme'); if(pref === 'light'){ document.body.classList.add('light'); } }catch(e){}
+    updateThemeIcon();
   }
   try{
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';

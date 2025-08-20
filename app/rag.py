@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from .db import SessionLocal
 from .vectors import similarity_search, hybrid_search_rrf
+from .validate import validate_page_with_playwright
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5")
@@ -38,6 +39,8 @@ class GraphState(BaseModel):
     selected_html: str | None = None
     selected_path: List[str] = Field(default_factory=list)
     system_context: str | None = None
+    validation: Dict[str, Any] | None = None
+    validation_attempts: int = 0
 
 
 def _retrieve(state: GraphState) -> GraphState:
@@ -94,6 +97,17 @@ def _generate(state: GraphState) -> GraphState:
         parts.append(f"Task: {state.question}\n\n")
         parts.append("Current page content (may be partial):\n")
         parts.append(f"{context}\n\n")
+        # If prior validation found client-side errors, ask to fix them specifically
+        try:
+            val = state.validation or {}
+            errors = (val.get("console_errors") or []) + (val.get("page_errors") or [])
+            if errors:
+                parts.append("Known client errors to fix (from browser validation):\n")
+                for err in errors[:10]:
+                    parts.append(f"- {err}\n")
+                parts.append("\n")
+        except Exception:
+            pass
         if selected_block:
             parts.append("Selected element (focus your edits here):\n")
             parts.append(selected_block)
@@ -108,6 +122,22 @@ def _generate(state: GraphState) -> GraphState:
         user = "".join(parts)
     else:
         user = f"Task: {state.question}\n\nContext:\n{context}"
+    # Simple tool call: if the question starts with "image:" use the image tool and return the URL
+    if state.question.strip().lower().startswith("image:"):
+        try:
+            prompt = state.question.split(":", 1)[1].strip()
+            # Local HTTP call to our tool
+            import requests
+            payload = {"prompt": prompt, "page_slug": state.page_slug, "size": "1024x1024"}
+            resp = requests.post(os.getenv("BASE_URL", "http://localhost:8000") + "/api/tools/image", json=payload, timeout=180)
+            data = resp.json() if resp.ok else {"error": resp.text}
+            url = data.get("url") or data.get("static_url") or "(no url)"
+            state.answer = f"Image generated: {url}"
+            return state
+        except Exception as e:
+            state.answer = f"Image tool error: {e}"
+            return state
+
     msg = llm.invoke([
         SystemMessage(content=system),
         HumanMessage(content=user),
@@ -143,7 +173,34 @@ def build_graph():
     graph = StateGraph(GraphState)
     graph.add_node("retrieve", _retrieve)
     graph.add_node("generate", _generate)
+    # Optional: validation node to check DOM/console after generation
+    def _validate(state: GraphState) -> GraphState:
+        try:
+            if not state.page_slug:
+                return state
+            import os
+            base_url = os.getenv("BASE_URL", "http://localhost:8000")
+            url = f"{base_url}/pages/{state.page_slug}/index.html"
+            result = validate_page_with_playwright(url)
+            state.validation = result  # type: ignore
+            state.validation_attempts = int(getattr(state, "validation_attempts", 0) or 0) + 1
+            return state
+        except Exception:
+            return state
+
+    def _needs_fix(state: GraphState) -> str:
+        v = getattr(state, "validation", None) or {}
+        errors = (v.get("console_errors") or []) + (v.get("page_errors") or [])
+        # If there are errors and we have not exceeded attempts, go back to generate for another pass
+        attempts = int(getattr(state, "validation_attempts", 0) or 0)
+        MAX_ATTEMPTS = 2
+        if errors and attempts <= MAX_ATTEMPTS:
+            return "generate"
+        return END
+
+    graph.add_node("validate", _validate)
     graph.set_entry_point("retrieve")
     graph.add_edge("retrieve", "generate")
-    graph.add_edge("generate", END)
+    graph.add_edge("generate", "validate")
+    graph.add_conditional_edges("validate", _needs_fix, {"generate": "generate", END: END})
     return graph.compile()

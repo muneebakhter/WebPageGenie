@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import asyncio
 from pathlib import Path
 from typing import List
@@ -20,7 +21,9 @@ from .rag import build_graph, GraphState
 from .rag import _retrieve as rag_retrieve  # type: ignore
 from .rag import _generate as rag_generate  # type: ignore
 from .ws import ReloadWebSocketManager
+from .validate import validate_page_with_playwright
 from .ingest import ingest_all_pages, ingest_single_page
+from .images import generate_image_file_async
 from datetime import datetime, timezone
 import difflib
 import re
@@ -47,6 +50,12 @@ class ChatRequest(BaseModel):
     selected_html: str | None = None
     selected_path: list[str] | None = None
     system_context: str | None = None
+class ImageRequest(BaseModel):
+    prompt: str
+    page_slug: str | None = None
+    size: str | None = None  # e.g., 1024x1024
+    seed: int | None = None
+
 
 
 @app.on_event("startup")
@@ -117,6 +126,59 @@ async def graph_view(request: Request):
     except Exception:
         mermaid = "graph TD; A[retrieve] --> B[generate]; B --> C[END];"
     return templates.TemplateResponse("graph.html", {"request": request, "mermaid": mermaid})
+@app.post("/api/generate_image")
+async def api_generate_image(req: ImageRequest):
+    try:
+        info = await generate_image_file_async(
+            prompt=req.prompt,
+            page_slug=req.page_slug,
+            size=(req.size or "1024x1024"),
+            seed=req.seed,
+        )
+        return JSONResponse(info)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/tools/image")
+async def api_tool_image(req: ImageRequest):
+    try:
+        info = await generate_image_file_async(
+            prompt=req.prompt,
+            page_slug=req.page_slug,
+            size=(req.size or "1024x1024"),
+            seed=req.seed,
+            debug=True,
+        )
+        return JSONResponse(info)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/generate_logo")
+async def api_generate_logo(req: ImageRequest):
+    """Generate a site logo and save it under /static/logo.<ext>."""
+    try:
+        info = await generate_image_file_async(
+            prompt=req.prompt,
+            page_slug=None,
+            size=(req.size or "1024x1024"),
+            seed=req.seed,
+            debug=True,
+        )
+        src_path = Path(info.get("path") or "")
+        if not src_path.exists():
+            return JSONResponse(status_code=500, content={"error": "generation did not create a file"})
+        ext = src_path.suffix.lower() or ".png"
+        dest = STATIC_DIR / f"logo{ext}"
+        try:
+            dest.unlink(missing_ok=True)
+        except Exception:
+            pass
+        shutil.copyfile(src_path, dest)
+        return JSONResponse({"saved": True, "static_url": f"/static/logo{ext}", "path": str(dest), "provider": info.get("provider")})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 
 @app.websocket("/ws")
@@ -230,12 +292,63 @@ async def chat_stream(req: ChatRequest):
             await ws_manager.broadcast_reload()
             saved = True
 
+        # Validate in browser and optionally retry fixes
+        validation = None
+        try:
+            if req.page_slug:
+                import os as _os
+                base_url = _os.getenv("BASE_URL", "http://localhost:8000")
+                url = f"{base_url}/pages/{req.page_slug}/index.html"
+                MAX_ATTEMPTS = 2
+                attempt = 0
+                while attempt <= MAX_ATTEMPTS:
+                    yield await sse("phase", json.dumps({"name": "validate"}))
+                    validation = validate_page_with_playwright(url)
+                    errs = (validation.get("console_errors") or []) + (validation.get("page_errors") or [])
+                    yield await sse("validated", json.dumps({
+                        "console_errors": validation.get("console_errors") or [],
+                        "page_errors": validation.get("page_errors") or []
+                    }))
+                    if not errs:
+                        break
+                    # Ask generator to fix based on known client errors
+                    attempt += 1
+                    if attempt > MAX_ATTEMPTS:
+                        break
+                    try:
+                        state_after_generate.validation = validation  # type: ignore
+                    except Exception:
+                        pass
+                    yield await sse("phase", json.dumps({"name": "generate_fix"}))
+                    state_after_generate = await to_thread(rag_generate, state_after_generate)  # type: ignore
+                    answer = state_after_generate.answer
+                    if "<html" in (answer or "") and req.page_slug:
+                        out_path = _save_version_and_write_current(req.page_slug, answer or "")
+                        try:
+                            ingest_single_page(out_path)
+                        except Exception:
+                            pass
+                        await ws_manager.broadcast_reload()
+                        saved = True
+        except Exception:
+            pass
+
         payload = {
             "saved": saved,
             "answer": answer,
             "timings": timings,
             "retrieval_method": state.retrieval_method,
         }
+        try:
+            # Include validation summary if present
+            val = validation or getattr(state_after_generate, "validation", None)
+            if val:
+                payload["validation"] = {
+                    "console_errors": (val.get("console_errors") or [])[:10],
+                    "page_errors": (val.get("page_errors") or [])[:10],
+                }
+        except Exception:
+            pass
         yield await sse("done", json.dumps(payload))
 
     from starlette.responses import StreamingResponse

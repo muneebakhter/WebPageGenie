@@ -1,40 +1,86 @@
-body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;background:#0b1220;color:#e6ecff}
-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(90deg,#0b1220,#0f1b3d);border-bottom:1px solid rgba(255,255,255,0.08)}
+/* Theme tokens */
+:root{
+  --bg:#0b1220;
+  --fg:#e6ecff;
+  --muted:#b9c9ff;
+  --card:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);
+  --inputBg:#0e1730;
+  --link:#9dc1ff;
+  --hover:rgba(255,255,255,0.08);
+}
+body.light{
+  --bg:#f3f6fb;
+  --fg:#0f172a;
+  --muted:#495a74;
+  --card:rgba(0,0,0,0.02);
+  --border:rgba(0,0,0,0.12);
+  --inputBg:#ffffff;
+  --link:#124a9c;
+  --hover:rgba(0,0,0,0.06);
+}
+
+body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;background:var(--bg);color:var(--fg)}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)}
 header .brand{display:flex;align-items:center;gap:10px;margin-right:16px}
 header .logo{width:28px;height:28px;opacity:.9}
-header h1{font-size:18px;margin:0;color:#fff}
-header a{color:#9dc1ff;margin-right:10px;text-decoration:none;padding:6px 10px;border-radius:6px}
-header a:hover{background:rgba(157,193,255,0.12)}
+header h1{font-size:18px;margin:0;color:var(--fg)}
+header a{color:var(--link);margin-right:10px;text-decoration:none;padding:6px 10px;border-radius:6px}
+header a:hover{background:var(--hover)}
+/* Ghost button that adapts to theme */
+.btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--hover);color:var(--fg);border-color:var(--border)}
 main{padding:0}
 
 .layout{display:flex;min-height:calc(100vh - 64px)}
-.sidebar{width:320px;flex:0 0 auto;border-right:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)}
+.sidebar{width:320px;flex:0 0 auto;border-right:1px solid var(--border);background:var(--card)}
 .sidebar.collapsed{width:0;flex:0 0 0;overflow:hidden}
 .sidebar-inner{padding:12px;display:flex;flex-direction:column;gap:12px}
 .header-tools{flex:1;gap:10px}
 .header-tools #preview-path{min-width:280px;max-width:520px;flex:0 1 auto}
-.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;backdrop-filter: blur(6px);box-shadow:0 10px 30px rgba(0,0,0,0.25)}
-.card h2{margin-top:0;font-size:18px;color:#fff}
-.page-list{list-style:none;padding:0;margin:0;color:#fff}
-.page-list li{padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.08)}
-.page-list a{color:#fff;text-decoration:none}
-.page-list a:hover{color:#fff}
-label, .form-label, .card-title{color:#ffffff}
-select.form-select, .input-group-text{color:#ffffff;background:rgba(255,255,255,0.08);}
-select.form-select option{background:#0e1730;color:#ffffff}
-.header-tools .form-select, .header-tools .input-group-text{border-color:rgba(255,255,255,0.5)}
+.icon-btn i{font-size:14px;line-height:1}
+.dropdown-menu{background:var(--inputBg);border:1px solid var(--border)}
+.dropdown-item{color:var(--fg)}
+.dropdown-item:hover{background:var(--hover);color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;backdrop-filter: blur(6px);box-shadow:0 10px 30px rgba(0,0,0,0.12)}
+.card h2{margin-top:0;font-size:18px;color:var(--fg)}
+.page-list{list-style:none;padding:0;margin:0;color:var(--fg)}
+.page-list li{padding:8px 0;border-bottom:1px dashed var(--border)}
+.page-list a{color:var(--link);text-decoration:none}
+.page-list a:hover{color:var(--fg)}
+label, .form-label, .card-title{color:var(--fg)}
+select.form-select, .input-group-text{color:var(--fg);background:var(--inputBg)}
+select.form-select option{background:var(--inputBg);color:var(--fg)}
+.header-tools .form-select, .header-tools .input-group-text{border-color:var(--border)}
 
 .controls{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
-.controls input[type=text]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0e1730;color:#ffffff}
+.controls input[type=text], .controls input[type=text]#page-select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--inputBg);color:var(--fg)}
+.controls textarea#chat-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--inputBg);color:var(--fg)}
 .controls .row{display:flex;gap:10px;align-items:end}
-.controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#ffffff}
-.controls select{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0e1730;color:#ffffff}
+.controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--fg)}
+.controls select{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--inputBg);color:var(--fg)}
 .controls .primary{padding:10px 14px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer}
 .controls .primary:hover{background:#16a34a}
 .controls .primary.processing{background:#16a34a}
 .controls .primary:disabled{opacity:.75;cursor:not-allowed}
 
-.chat pre{background:#0e1730;color:#ffffff;padding:12px;border-radius:10px;overflow:auto;min-height:160px;border:1px solid rgba(255,255,255,0.1)}
+.chat pre{background:var(--inputBg);color:var(--fg);padding:12px;border-radius:10px;overflow:auto;min-height:160px;border:1px solid var(--border)}
+
+/* Sidebar text color follows theme */
+.sidebar .card-title, .sidebar .form-label, .sidebar .page-list, .sidebar .page-list a, .sidebar .sidebar-footer{ color: var(--fg); }
+.sidebar .form-control, .sidebar .form-select{ background: var(--inputBg); color: var(--fg); border:1px solid var(--border); }
+
+/* Optional inverted light theme palette (fun mode) */
+body.light.invert{
+  --bg:#fff9f0;
+  --fg:#241010;
+  --muted:#5a3a3a;
+  --card:rgba(255,160,160,0.12);
+  --border:rgba(120,30,30,0.25);
+  --inputBg:#fff1ea;
+  --link:#8a1f1f;
+  --hover:rgba(120,30,30,0.08);
+}
 .graph pre{background:#fff}
 
 @media (max-width: 900px){
