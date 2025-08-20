@@ -56,3 +56,7 @@ Thumbs.db
 
 # Node modules (if any JS dependencies are added)
 node_modules/
+
+# AI/Docs (hide from repo)
+.cursor/
+docs/
