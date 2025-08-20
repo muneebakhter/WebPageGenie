@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import httpx
 from bs4 import BeautifulSoup  # type: ignore
+from .minify import minify_css, minify_js
 
 
 def validate_page_with_playwright(url: str, timeout_ms: int = 10000) -> Dict[str, Any]:
@@ -179,8 +180,17 @@ def scrape_site_with_playwright(url: str, timeout_s: int = 20, save_images: bool
         except Exception:
             ext_css, ext_js = [], []
 
+    # Combine CSS/JS assets  
     combined_css = ("\n\n".join(ext_css + ["/* inline */\n" + c for c in inline_css]))[:200_000]
     combined_js = ("\n\n".join(ext_js + ["/* inline */\n" + j for j in inline_js]))[:200_000]
+    
+    # Apply minification to combined assets for smaller storage and better AI context
+    try:
+        combined_css = minify_css(combined_css)
+        combined_js = minify_js(combined_js)
+    except Exception:
+        # Use original content if minification fails
+        pass
 
     frameworks = _detect_frameworks("\n".join([html, combined_css, combined_js]))
     summary_lines = [
@@ -479,6 +489,12 @@ async def consolidate_to_single_file(slug: str) -> Dict[str, Any]:
                     else:
                         css_text = ""
                 if css_text is not None:
+                    # Minify the CSS before inlining
+                    try:
+                        css_text = minify_css(css_text)
+                    except Exception:
+                        pass  # Use original CSS if minification fails
+                    
                     style = soup.new_tag("style")
                     style.string = css_text
                     link.replace_with(style)
@@ -509,6 +525,12 @@ async def consolidate_to_single_file(slug: str) -> Dict[str, Any]:
                 else:
                     js_text = ""
             if js_text is not None:
+                # Minify the JavaScript before inlining
+                try:
+                    js_text = minify_js(js_text)
+                except Exception:
+                    pass  # Use original JS if minification fails
+                
                 new_script = soup.new_tag("script")
                 new_script.string = js_text
                 script.replace_with(new_script)
