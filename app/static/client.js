@@ -381,9 +381,9 @@
     if(!d.getElementById(styleId)){
       const st = d.createElement('style'); st.id = styleId; st.textContent = `/* reserved */`; d.head.appendChild(st);
     }
-    // Clear any prior highlights from previous pick sessions
-    try{ d.querySelectorAll('.__wpg_hover').forEach(el=>el.classList.remove('__wpg_hover')); }catch{}
-    let hoverEl = null;
+  // (initial clear moved below to ensure we restore inline styles)
+  let hoverEl = null;
+  let selectedEl = null;
     function getEffectiveBg(el){
       let cur = el;
       while(cur && cur !== d.documentElement){
@@ -405,6 +405,8 @@
       el.style.outline = `3px dashed ${dashed}`;
       el.style.outlineOffset = '2px';
       el.style.boxShadow = '';
+  // Mark this node as the picker-selected node so we can reliably clear it later
+  el.dataset.__wpg_selected = '1';
       el.classList.add('__wpg_hover');
     }
     function removeHighlight(el){
@@ -415,28 +417,72 @@
       delete el.dataset.__wpg_prev_outline;
       delete el.dataset.__wpg_prev_outline_offset;
       delete el.dataset.__wpg_prev_boxshadow;
+  delete el.dataset.__wpg_selected;
       el.classList.remove('__wpg_hover');
     }
+    // Clear any prior highlights from previous pick sessions and restore styles
+    try{ d.querySelectorAll('.__wpg_hover').forEach(el=>removeHighlight(el)); }catch{}
     function onMouseOver(e){ if(hoverEl) removeHighlight(hoverEl); hoverEl = e.target; applyHighlight(hoverEl); }
     function buildPath(el){ const parts=[]; let cur=el; while(cur && cur.nodeType===1 && cur.tagName.toLowerCase()!=='html'){ const tag=cur.tagName.toLowerCase(); const id=cur.id?`#${cur.id}`:''; const cls=(cur.className&&typeof cur.className==='string')?'.'+cur.className.trim().split(/\s+/).join('.'):''; const index=(()=>{ let i=1; let sib=cur; while((sib=sib.previousElementSibling)!=null){ if(sib.tagName===cur.tagName) i++; } return i; })(); parts.unshift(`${tag}${id}${cls}:nth-of-type(${index})`); cur = cur.parentElement; } return parts; }
     function cleanup(){ try{ if(hoverEl) removeHighlight(hoverEl); d.querySelectorAll('.__wpg_hover').forEach(el=>removeHighlight(el)); }catch{} }
-    function onClick(e){
-      e.preventDefault(); e.stopPropagation();
-      const el = e.target;
+    function handlePickElement(el){
+      if(!el || el.nodeType !== 1) return;
       const path = buildPath(el);
       const outer = el.outerHTML;
-      // Clear previous highlights except the selected element, then ensure selected is highlighted
-      try{ d.querySelectorAll('.__wpg_hover').forEach(node=>{ if(node!==el) removeHighlight(node); }); }catch{}
+      // Clear any previous highlights robustly: elements with class and elements with matching inline outline styles
+      try{
+        // Remove class-based highlights
+  d.querySelectorAll('.__wpg_hover').forEach(node=>{ if(node!==el) removeHighlight(node); });
+  // Also remove any elements we previously marked as selected (covers DOM replacements)
+  d.querySelectorAll('[data-__wpg_selected]').forEach(node=>{ if(node!==el) removeHighlight(node); });
+        // Also remove any leftover inline outlines that match our picker style
+        const dashedMatches = Array.from(d.querySelectorAll('[style]')).filter(n=>{
+          try{ const s = n.style && n.style.outline; return s && /dashed/i.test(s); }catch{return false}
+        });
+        dashedMatches.forEach(node=>{ if(node!==el) removeHighlight(node); });
+      }catch{}
       applyHighlight(el);
-      w.parent.postMessage({type:'WPG_PICK', outerHTML: outer, path: path}, '*');
-      w.removeEventListener('mouseover', onMouseOver, true);
-      w.removeEventListener('click', onClick, true);
+      selectedEl = el;
+      try{ w.parent.postMessage({type:'WPG_PICK', outerHTML: outer, path: path}, '*'); }catch{}
     }
-    w.addEventListener('mouseover', onMouseOver, true);
-    w.addEventListener('click', onClick, true);
+
+    function onClick(e){
+      const el = e.target;
+      handlePickElement(el);
+      // Do not call preventDefault/stopPropagation so page interactions still work
+    }
+
+    function onMouseDown(e){
+      const el = e.target;
+      // pick on mousedown so inputs receive focus as normal
+      handlePickElement(el);
+    }
+
+    function onFocusIn(e){
+      const el = e.target;
+      handlePickElement(el);
+    }
+    // Prevent double-injecting handlers
+    try{
+      if(!w.__wpg_picker_installed){
+        w.__wpg_picker_installed = true;
+  w.__wpg_onMouseOver = onMouseOver;
+  w.__wpg_onClick = onClick;
+  w.__wpg_onMouseDown = onMouseDown;
+  w.__wpg_onFocusIn = onFocusIn;
+  w.addEventListener('mouseover', onMouseOver, true);
+  w.addEventListener('click', onClick, true);
+  w.addEventListener('mousedown', onMouseDown, true);
+  d.addEventListener('focusin', onFocusIn, true);
+      }
+    }catch{}
   }
   if(pickBtn){
-    pickBtn.addEventListener('click', ()=>{ pickActive = true; injectPicker(); });
+    pickBtn.addEventListener('click', ()=>{ 
+      pickActive = true; 
+      try{ clearHighlightAndContext(); }catch{};
+      injectPicker(); 
+    });
   }
   if(editContextBtn){
     editContextBtn.addEventListener('click', ()=>{
@@ -491,12 +537,28 @@
     try{
       if(frame && frame.contentWindow){
         const d = frame.contentWindow.document;
-        d.querySelectorAll('.__wpg_hover').forEach(el=>{
-          el.style.outline = el.dataset.__wpg_prev_outline || '';
-          el.style.outlineOffset = el.dataset.__wpg_prev_outline_offset || '';
-          el.style.boxShadow = el.dataset.__wpg_prev_boxshadow || '';
-          el.classList.remove('__wpg_hover');
-        });
+        // Clear class-based highlights
+  d.querySelectorAll('.__wpg_hover').forEach(el=>{ removeHighlight(el); });
+  // Also clear any nodes we explicitly marked as selected (covers DOM replacements)
+  d.querySelectorAll('[data-__wpg_selected]').forEach(el=>{ removeHighlight(el); });
+        // Also clear any leftover inline outlines that match the picker highlight
+        try{
+          Array.from(d.querySelectorAll('[style]')).forEach(el=>{
+            try{
+              const s = el.style && el.style.outline;
+              if(s && /dashed/i.test(s)){
+                el.style.outline = '';
+                el.style.outlineOffset = '';
+                el.style.boxShadow = '';
+                el.classList.remove('__wpg_hover');
+                delete el.dataset.__wpg_prev_outline;
+                delete el.dataset.__wpg_prev_outline_offset;
+                delete el.dataset.__wpg_prev_boxshadow;
+    delete el.dataset.__wpg_selected;
+              }
+            }catch{}
+          });
+        }catch{}
       }
     }catch{}
     selectedPath = [];
