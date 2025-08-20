@@ -41,6 +41,11 @@
   const pageDD = document.getElementById('page-suggestions');
   const methodSel = document.getElementById('retrieval-method');
   const out = document.getElementById('chat-output');
+  const refSection = document.getElementById('ref-section');
+  const refUrl = document.getElementById('ref-url');
+  const refCheck = document.getElementById('ref-check');
+  const refStatus = document.getElementById('ref-status');
+  const refImages = document.getElementById('ref-images');
   let outputModal = null;
   let bootstrapModal = null;
   const editContextBtn = document.getElementById('edit-context');
@@ -61,15 +66,72 @@
   function hideSuggestions(){ if(pageDD) pageDD.style.display='none'; }
 
   if(pageSel){
-    pageSel.addEventListener('input', (e)=>{ showSuggestions(pageSel.value); });
+    function updateRefSection(){
+      const name = (pageSel.value || '').trim();
+      const isExisting = !!pageList.find(p => p.toLowerCase() === name.toLowerCase());
+      const isNew = !!name && !isExisting;
+      if(refSection){ refSection.style.display = isNew ? '' : 'none'; }
+      if(refUrl){ refUrl.disabled = !isNew; if(isNew && !refUrl.value) refUrl.value = ''; }
+      if(refCheck){ refCheck.disabled = !isNew; }
+      if(refImages){ refImages.disabled = !isNew; refImages.checked = false; }
+      if(refStatus){ refStatus.style.display = 'none'; refStatus.textContent = ''; refStatus.className = 'input-group-text'; }
+    }
+    pageSel.addEventListener('input', (e)=>{ showSuggestions(pageSel.value); updateRefSection(); });
     pageSel.addEventListener('focus', ()=>{ showSuggestions(pageSel.value); });
     pageSel.addEventListener('blur', ()=>{ setTimeout(hideSuggestions, 150); });
+    // Initialize once
+    updateRefSection();
   }
   if(pageDD){
     pageDD.addEventListener('click', (e)=>{
       const t = e.target; if(!(t instanceof Element)) return;
       const val = t.getAttribute('data-value');
-      if(val && pageSel){ pageSel.value = val; hideSuggestions(); }
+      if(val && pageSel){ pageSel.value = val; hideSuggestions(); if(typeof updateRefSection==='function') updateRefSection(); }
+    });
+  }
+
+  if(refCheck && refUrl){
+    refCheck.addEventListener('click', async ()=>{
+      const url = (refUrl.value || '').trim();
+      if(!url) return;
+      // Reset status UI
+      if(refStatus){ refStatus.style.display=''; refStatus.textContent='…'; refStatus.className='input-group-text'; }
+      try{
+        const res = await fetch('/api/tools/validate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url })});
+        const j = await res.json();
+        const ok = !!(j && j.ok);
+        if(refStatus){
+          refStatus.style.display='';
+          refStatus.textContent = ok ? '✓' : '✕';
+          refStatus.className = 'input-group-text ' + (ok ? 'text-success' : 'text-danger');
+        }
+        // If accessible, fetch example site assets and write to output modal
+        if(ok){
+          const res2 = await fetch('/api/tools/example/scrape', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url, save_images: !!(refImages && refImages.checked), page_slug: (pageSel && pageSel.value) || null })});
+          const j2 = await res2.json();
+          const out = document.getElementById('chat-output');
+          const modalEl = document.getElementById('outputModal');
+          if(out){
+            out.textContent = [
+              'Example site analysis (for AI context):',
+              j2.summary || '(no summary)',
+              '',
+              'Detected frameworks: ' + ((j2.frameworks||[]).join(', ') || 'none'),
+              '',
+              (Array.isArray(j2.images) && j2.images.length ? ('Saved images (' + j2.images.length + '):\n' + j2.images.map(i => `- ${i.path}  alt="${i.alt||''}"`).join('\n')) : 'No images saved'),
+              '',
+              'Combined CSS (truncated):',
+              (j2.css_combined || '').slice(0, 3000),
+              '',
+              'Combined JS (truncated):',
+              (j2.js_combined || '').slice(0, 3000),
+            ].join('\n');
+          }
+          try{ if(window.bootstrap && modalEl){ const m=new window.bootstrap.Modal(modalEl); m.show(); } }catch{}
+        }
+      }catch(err){
+        if(refStatus){ refStatus.style.display=''; refStatus.textContent='✕'; refStatus.className='input-group-text text-danger'; }
+      }
     });
   }
 

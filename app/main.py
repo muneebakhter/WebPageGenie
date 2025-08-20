@@ -22,6 +22,7 @@ from .rag import _retrieve as rag_retrieve  # type: ignore
 from .rag import _generate as rag_generate  # type: ignore
 from .ws import ReloadWebSocketManager
 from .validate import validate_page_with_playwright
+from .validate import scrape_site_with_playwright
 from .ingest import ingest_all_pages, ingest_single_page
 from .images import generate_image_file_async
 from datetime import datetime, timezone
@@ -56,6 +57,12 @@ class ImageRequest(BaseModel):
     size: str | None = None  # e.g., 1024x1024
     seed: int | None = None
     output_filename: str | None = None
+
+class ValidateRequest(BaseModel):
+    slug: str | None = None
+    url: str | None = None
+    save_images: bool | None = None
+    page_slug: str | None = None
 
 
 
@@ -153,6 +160,31 @@ async def api_tool_image(req: ImageRequest):
             output_filename=req.output_filename,
         )
         return JSONResponse(info)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/tools/validate")
+def api_tool_validate(req: ValidateRequest):
+    try:
+        if req.url:
+            url = req.url
+        elif req.slug:
+            base_url = os.getenv("BASE_URL", "http://localhost:8000")
+            url = f"{base_url}/pages/{req.slug}/index.html"
+        else:
+            return JSONResponse(status_code=400, content={"error": "Provide slug or url"})
+        result = validate_page_with_playwright(url)
+        return JSONResponse({"url": url, **result})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/tools/example/scrape")
+def api_tool_example_scrape(req: ValidateRequest):
+    try:
+        if not req.url:
+            return JSONResponse(status_code=400, content={"error": "url required"})
+        data = scrape_site_with_playwright(req.url)
+        return JSONResponse(data)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

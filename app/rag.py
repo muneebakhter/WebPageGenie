@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
+from openai import OpenAI
 from langchain_core.documents import Document as LCDocument
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, END
@@ -19,14 +20,8 @@ EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 RERANK_MODEL = os.getenv("RERANK_MODEL", "rerank-english-v3.0")
 
+# Disable Cohere reranking by default to avoid client incompatibilities
 _cohere_client = None
-if COHERE_API_KEY:
-    try:
-        import cohere  # type: ignore
-
-        _cohere_client = cohere.Client(api_key=COHERE_API_KEY)
-    except Exception:
-        _cohere_client = None
 
 
 class GraphState(BaseModel):
@@ -46,8 +41,10 @@ class GraphState(BaseModel):
 def _retrieve(state: GraphState) -> GraphState:
     import time
     t0 = time.perf_counter()
-    embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY, model=EMBED_MODEL)
-    query_vec = embeddings.embed_query(state.question)
+    # Use OpenAI Python client directly to avoid proxy kwarg incompatibilities
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    resp = client.embeddings.create(input=state.question, model=EMBED_MODEL)
+    query_vec = list(resp.data[0].embedding)
     t1 = time.perf_counter()
     with SessionLocal() as db:
         if state.retrieval_method == "hybrid":
@@ -150,23 +147,8 @@ def _generate(state: GraphState) -> GraphState:
 
 
 def _rerank_docs(query: str, docs: List[LCDocument]) -> List[LCDocument]:
-    if not docs:
-        return docs
-    if _cohere_client is None:
-        return docs
-    try:
-        doc_texts = [d.page_content for d in docs]
-        result = _cohere_client.rerank(
-            model=RERANK_MODEL,
-            query=query,
-            documents=doc_texts,
-            top_n=len(doc_texts),
-        )
-        # Cohere returns items with index and relevance score
-        ordered = sorted(result, key=lambda r: r.relevance_score, reverse=True)
-        return [docs[r.index] for r in ordered]
-    except Exception:
-        return docs
+    # Reranking disabled; return as-is
+    return docs
 
 
 def build_graph():

@@ -5,13 +5,14 @@ from pathlib import Path
 from typing import Iterable, List, Tuple, Optional
 
 from bs4 import BeautifulSoup
-from langchain_openai import OpenAIEmbeddings
+from openai import OpenAI
 
 from .db import SessionLocal
 from .vectors import upsert_chunks
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 def _chunk_text(text: str, chunk_size: int = 1200, overlap: int = 200) -> List[str]:
