@@ -55,6 +55,7 @@ class ImageRequest(BaseModel):
     page_slug: str | None = None
     size: str | None = None  # e.g., 1024x1024
     seed: int | None = None
+    output_filename: str | None = None
 
 
 
@@ -134,6 +135,7 @@ async def api_generate_image(req: ImageRequest):
             page_slug=req.page_slug,
             size=(req.size or "1024x1024"),
             seed=req.seed,
+            output_filename=req.output_filename,
         )
         return JSONResponse(info)
     except Exception as e:

@@ -9,14 +9,14 @@ if not BFL_API_KEY:
     raise ValueError("BFL_API_KEY is not set")
 
 request = requests.post(
-    'https://api.bfl.ai/v1/flux-kontext-pro',
+    'https://api.bfl.ai/v1/flux-dev',
     headers={
         'accept': 'application/json',
         'x-key': os.environ.get("BFL_API_KEY"),
         'Content-Type': 'application/json',
     },
     json={
-        'prompt': 'A cat on its back legs running like a human is holding a big silver fish with its arms. The cat is running away from the shop owner and has a panicked look on his face. The scene is situated in a crowded market.',
+        'prompt': 'A logo of a genie lamp with picture of html carats on the lamp, abstract, professional',
         "aspect_ratio": "1:1"
     },
 ).json()

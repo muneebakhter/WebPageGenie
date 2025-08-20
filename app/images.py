@@ -14,6 +14,7 @@ from dotenv import load_dotenv, find_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PAGES_DIR = BASE_DIR / "pages"
+STATIC_DIR = BASE_DIR / "app" / "static"
 
 
 def _ensure_asset_dir(slug: Optional[str]) -> Path:
@@ -183,6 +184,7 @@ async def generate_image_file_async(
     size: str = "1024x1024",
     seed: Optional[int] = None,
     debug: bool = False,
+    output_filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Generate an image using FLUX via Replicate if REPLICATE_API_TOKEN is set,
@@ -190,6 +192,26 @@ async def generate_image_file_async(
     """
     out_dir = _ensure_asset_dir(page_slug)
     ts = time.strftime("%Y%m%dT%H%M%S")
+
+    # Resolve desired destination path if requested
+    desired_dest: Optional[Path] = None
+    if output_filename:
+        # Must be .png
+        if not output_filename.lower().endswith(".png"):
+            return {"error": "output_filename must end with .png", "saved": False}
+        candidate = Path(output_filename)
+        if not candidate.is_absolute():
+            # Treat relative to project root
+            candidate = (BASE_DIR / candidate).resolve()
+        # Security: only allow saving under STATIC_DIR or PAGES_DIR
+        try:
+            c_str = str(candidate)
+            if not (str(candidate).startswith(str(STATIC_DIR)) or str(candidate).startswith(str(PAGES_DIR))):
+                return {"error": "output path must be under app/static or pages/", "saved": False}
+        except Exception:
+            return {"error": "invalid output path", "saved": False}
+        candidate.parent.mkdir(parents=True, exist_ok=True)
+        desired_dest = candidate
 
     # Ensure latest .env is loaded (supports updating token without server restart)
     try:
@@ -218,9 +240,18 @@ async def generate_image_file_async(
                 _write_placeholder_svg(prompt, dest)
                 rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
                 return {"provider": "bfl", "saved": True, "url": rel, "path": str(dest), "debug": debug_info if debug else None, "error": "bfl_request_failed"}
-            ext = ".png"; filename = f"img-{ts}{ext}"; dest = out_dir / filename
+            if desired_dest is not None:
+                dest = desired_dest
+            else:
+                ext = ".png"; filename = f"img-{ts}{ext}"; dest = out_dir / filename
             await _adownload_to(url0, dest)
-            rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+            # Compute URL based on where it was saved
+            if str(dest).startswith(str(STATIC_DIR)):
+                rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+            elif str(dest).startswith(str(PAGES_DIR)):
+                rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+            else:
+                rel = dest.as_posix()
             return {"provider": "bfl", "saved": True, "url": rel, "path": str(dest), "debug": debug_info if debug else None}
         except Exception as e:
             filename = f"img-{ts}.svg"; dest = out_dir / filename
@@ -259,11 +290,17 @@ async def generate_image_file_async(
                     "debug": debug_info if debug else None,
                     "error": "replicate_request_failed",
                 }
-            ext = ".png"
-            filename = f"img-{ts}{ext}"
-            dest = out_dir / filename
+            if desired_dest is not None:
+                dest = desired_dest
+            else:
+                ext = ".png"; filename = f"img-{ts}{ext}"; dest = out_dir / filename
             await _adownload_to(url0, dest)
-            rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+            if str(dest).startswith(str(STATIC_DIR)):
+                rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+            elif str(dest).startswith(str(PAGES_DIR)):
+                rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+            else:
+                rel = dest.as_posix()
             return {
                 "provider": "replicate",
                 "model": model,
