@@ -160,28 +160,24 @@ def replace_developer_comments(html_content: str) -> str:
                 flags=re.DOTALL | re.IGNORECASE
             )
         
-        # Look for data-image-hint attributes and add standardized placeholders
-        soup = BeautifulSoup(html_content, 'html.parser')
+        # Look for data-image-hint attributes and add standardized placeholders using regex
+        # This is safer than trying to manipulate BeautifulSoup objects
+        html_content = re.sub(
+            r'(<img[^>]*data-image-hint=["\']([^"\']*)["\'][^>]*>)',
+            r'<!-- [IMAGE_PLACEHOLDER: \2] -->\1',
+            html_content,
+            flags=re.IGNORECASE
+        )
         
-        # Find images with data-image-hint attributes
-        for img in soup.find_all('img', {'data-image-hint': True}):
-            hint = img.get('data-image-hint', '')
-            if hint:
-                # Add a standardized comment before the image
-                placeholder_comment = soup.new_string(
-                    f'<!-- [IMAGE_PLACEHOLDER: {hint}] -->'
-                )
-                img.insert_before(placeholder_comment)
-                
-        # Find divs or other elements mentioning placeholder images
-        for elem in soup.find_all(text=re.compile(r'replace with real image|placeholder.*image', re.IGNORECASE)):
-            if elem.parent:
-                placeholder_comment = soup.new_string(
-                    '<!-- [IMAGE_PLACEHOLDER: Replace with appropriate image] -->'
-                )
-                elem.parent.insert_before(placeholder_comment)
-                
-        return str(soup)
+        # Find elements mentioning placeholder images
+        html_content = re.sub(
+            r'(replace with real image|placeholder.*image)',
+            r'<!-- [IMAGE_PLACEHOLDER: Replace with appropriate image] -->\1',
+            html_content,
+            flags=re.IGNORECASE
+        )
+        
+        return html_content
         
     except Exception as e:
         logger.warning(f"Developer comment replacement failed: {e}, returning original content")

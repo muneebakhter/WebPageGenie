@@ -54,6 +54,9 @@ Thumbs.db
 # Temporary files
 /tmp/
 
+# Test output files
+test_minified_*.html
+
 # Node modules (if any JS dependencies are added)
 node_modules/
 
