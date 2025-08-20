@@ -112,7 +112,7 @@ def _replicate_http_predict(token: str, model: str, inputs: Dict[str, Any], time
 async def _bfl_http_predict_async(token: str, prompt: str, aspect_ratio: str = "1:1", timeout_s: int = 180, debug: bool = False) -> Tuple[Optional[str], Dict[str, Any]]:
     """Call BFL FLUX endpoint and poll until completion. Returns (url_or_none, debug)."""
     import time as _t
-    create_url = "https://api.bfl.ai/v1/flux-kontext-pro"
+    create_url = "https://api.bfl.ai/v1/flux-dev"
     headers = {
         "accept": "application/json",
         "x-key": token,
@@ -236,9 +236,26 @@ async def generate_image_file_async(
                 ar = "9:16"
             url0, debug_info = await _bfl_http_predict_async(bfl_token, prompt, aspect_ratio=ar, timeout_s=180, debug=debug)
             if not url0:
-                filename = f"img-{ts}.svg"; dest = out_dir / filename
+                if desired_dest is not None:
+                    dest = desired_dest
+                    # For SVG placeholders, change extension to .svg
+                    if desired_dest.suffix.lower() == '.png':
+                        dest = desired_dest.with_suffix('.svg')
+                else:
+                    filename = f"img-{ts}.svg"
+                    dest = out_dir / filename
                 _write_placeholder_svg(prompt, dest)
-                rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+                
+                # Compute URL based on where it was saved
+                if str(dest).startswith(str(STATIC_DIR)):
+                    rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+                elif str(dest).startswith(str(PAGES_DIR)):
+                    rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+                elif page_slug:
+                    rel = f"/pages/{page_slug}/assets/{dest.name}"
+                else:
+                    rel = f"/pages/assets/{dest.name}"
+                
                 return {"provider": "bfl", "saved": True, "url": rel, "path": str(dest), "debug": debug_info if debug else None, "error": "bfl_request_failed"}
             if desired_dest is not None:
                 dest = desired_dest
@@ -254,9 +271,26 @@ async def generate_image_file_async(
                 rel = dest.as_posix()
             return {"provider": "bfl", "saved": True, "url": rel, "path": str(dest), "debug": debug_info if debug else None}
         except Exception as e:
-            filename = f"img-{ts}.svg"; dest = out_dir / filename
+            if desired_dest is not None:
+                dest = desired_dest
+                # For SVG placeholders, change extension to .svg
+                if desired_dest.suffix.lower() == '.png':
+                    dest = desired_dest.with_suffix('.svg')
+            else:
+                filename = f"img-{ts}.svg"
+                dest = out_dir / filename
             _write_placeholder_svg(prompt, dest)
-            rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+            
+            # Compute URL based on where it was saved
+            if str(dest).startswith(str(STATIC_DIR)):
+                rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+            elif str(dest).startswith(str(PAGES_DIR)):
+                rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+            elif page_slug:
+                rel = f"/pages/{page_slug}/assets/{dest.name}"
+            else:
+                rel = f"/pages/assets/{dest.name}"
+            
             return {"provider": "placeholder", "saved": True, "url": rel, "path": str(dest), "error": str(e)}
 
     if token:
@@ -278,10 +312,26 @@ async def generate_image_file_async(
             url0, debug_info = await loop.run_in_executor(None, lambda: _replicate_http_predict(token, model, inputs, timeout_s=90, debug=debug))
             if not url0:
                 # Fallback to placeholder
-                filename = f"img-{ts}.svg"
-                dest = out_dir / filename
+                if desired_dest is not None:
+                    dest = desired_dest
+                    # For SVG placeholders, change extension to .svg
+                    if desired_dest.suffix.lower() == '.png':
+                        dest = desired_dest.with_suffix('.svg')
+                else:
+                    filename = f"img-{ts}.svg"
+                    dest = out_dir / filename
                 _write_placeholder_svg(prompt, dest)
-                rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+                
+                # Compute URL based on where it was saved
+                if str(dest).startswith(str(STATIC_DIR)):
+                    rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+                elif str(dest).startswith(str(PAGES_DIR)):
+                    rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+                elif page_slug:
+                    rel = f"/pages/{page_slug}/assets/{dest.name}"
+                else:
+                    rel = f"/pages/assets/{dest.name}"
+                
                 return {
                     "provider": "placeholder",
                     "saved": True,
@@ -311,10 +361,26 @@ async def generate_image_file_async(
             }
         except Exception as e:
             # Fallback to placeholder on any failure
-            filename = f"img-{ts}.svg"
-            dest = out_dir / filename
+            if desired_dest is not None:
+                dest = desired_dest
+                # For SVG placeholders, change extension to .svg
+                if desired_dest.suffix.lower() == '.png':
+                    dest = desired_dest.with_suffix('.svg')
+            else:
+                filename = f"img-{ts}.svg"
+                dest = out_dir / filename
             _write_placeholder_svg(prompt, dest)
-            rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+            
+            # Compute URL based on where it was saved
+            if str(dest).startswith(str(STATIC_DIR)):
+                rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+            elif str(dest).startswith(str(PAGES_DIR)):
+                rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+            elif page_slug:
+                rel = f"/pages/{page_slug}/assets/{dest.name}"
+            else:
+                rel = f"/pages/assets/{dest.name}"
+            
             return {
                 "provider": "placeholder",
                 "saved": True,
@@ -324,10 +390,26 @@ async def generate_image_file_async(
             }
 
     # No token: placeholder
-    filename = f"img-{ts}.svg"
-    dest = out_dir / filename
+    if desired_dest is not None:
+        dest = desired_dest
+        # For SVG placeholders, change extension to .svg
+        if desired_dest.suffix.lower() == '.png':
+            dest = desired_dest.with_suffix('.svg')
+    else:
+        filename = f"img-{ts}.svg"
+        dest = out_dir / filename
     _write_placeholder_svg(prompt, dest)
-    rel = f"/pages/{page_slug}/assets/{filename}" if page_slug else f"/pages/assets/{filename}"
+    
+    # Compute URL based on where it was saved
+    if str(dest).startswith(str(STATIC_DIR)):
+        rel = "/static/" + dest.relative_to(STATIC_DIR).as_posix()
+    elif str(dest).startswith(str(PAGES_DIR)):
+        rel = "/" + dest.relative_to(BASE_DIR).as_posix()
+    elif page_slug:
+        rel = f"/pages/{page_slug}/assets/{dest.name}"
+    else:
+        rel = f"/pages/assets/{dest.name}"
+    
     return {
         "provider": "placeholder",
         "saved": True,

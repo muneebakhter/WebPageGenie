@@ -150,6 +150,7 @@ async def api_tool_image(req: ImageRequest):
             size=(req.size or "1024x1024"),
             seed=req.seed,
             debug=True,
+            output_filename=req.output_filename,
         )
         return JSONResponse(info)
     except Exception as e:
